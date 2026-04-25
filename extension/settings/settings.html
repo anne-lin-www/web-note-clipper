@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <link rel="stylesheet" href="settings.css">
+  <title>Web Note Clipper 設定</title>
+</head>
+<body>
+  <div class="app">
+    <header class="app-header">
+      <span class="logo">📎</span>
+      <h1>Web Note Clipper 設定</h1>
+    </header>
+    <main class="form-body">
+      <div class="field">
+        <label for="inputApiUrl">API 網址</label>
+        <input type="url" id="inputApiUrl" placeholder="http://localhost:8765">
+      </div>
+      <div class="field">
+        <label for="selectVault">使用中的 Vault</label>
+        <select id="selectVault"></select>
+      </div>
+      <div class="field">
+        <button id="btnTest" class="btn">測試連線</button>
+        <div id="testResult" class="test-result hidden"></div>
+      </div>
+    </main>
+    <footer class="app-footer">
+      <button id="btnSave" class="btn btn-primary">儲存設定</button>
+    </footer>
+  </div>
+  <script src="settings.js"></script>
+</body>
+</html>

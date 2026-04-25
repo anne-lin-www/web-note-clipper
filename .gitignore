@@ -1,0 +1,18 @@
+# User config (contains local vault path with username)
+config.json
+
+# Build artifacts
+dist/
+build/
+*.spec
+__pycache__/
+*.pyc
+*.pyo
+.env
+
+# Test cache
+.pytest_cache/
+
+# OS
+.DS_Store
+Thumbs.db
