@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <link rel="stylesheet" href="popup.css">
+  <title>Web Note Clipper</title>
+</head>
+<body>
+  <div class="header">
+    <span class="logo">📎</span>
+    <span class="title">Web Note Clipper</span>
+  </div>
+  <div class="status-bar">
+    <span id="statusDot" class="dot dot-unknown"></span>
+    <span id="statusText">正在檢查連線…</span>
+  </div>
+  <div id="vaultInfo" class="vault-info hidden"></div>
+  <div id="warningBox" class="warning hidden">
+    本機服務未啟動，請從系統匣啟動服務。
+  </div>
+  <div class="actions">
+    <button id="btnSave" class="btn btn-primary" disabled>儲存目前頁面</button>
+    <button id="btnSettings" class="btn btn-secondary">設定</button>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>

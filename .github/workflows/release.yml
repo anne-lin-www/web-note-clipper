@@ -1,0 +1,54 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  build-windows-exe:
+    runs-on: windows-latest
+    environment: production
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies and PyInstaller
+        run: |
+          pip install -r api/requirements.txt
+          pip install pyinstaller
+
+      - name: Build with PyInstaller
+        run: |
+          pyinstaller --onefile --windowed --name web-note-clipper `
+            --add-data "api/config.example.json;." `
+            api/main.py
+
+      - name: Verify executable exists
+        shell: pwsh
+        run: |
+          if (-not (Test-Path "dist/web-note-clipper.exe")) {
+            Write-Error "dist/web-note-clipper.exe not found!"
+            exit 1
+          }
+          Write-Output "Build successful: dist/web-note-clipper.exe"
+
+      - name: Upload to GitHub Releases
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/web-note-clipper.exe
+          generate_release_notes: true
+          body: |
+            ## 安裝說明
+
+            1. 下載 `web-note-clipper.exe`
+            2. 將 `config.example.json` 複製並重命名為 `config.json`，填入您的 Obsidian Vault 路徑
+            3. 雙擊執行 `web-note-clipper.exe`，服務會出現在系統匣
+            4. 在 Chrome 中安裝擴充功能（請參考 README）
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

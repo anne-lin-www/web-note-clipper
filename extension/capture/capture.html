@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <link rel="stylesheet" href="capture.css">
+  <title>儲存網頁筆記</title>
+</head>
+<body>
+  <div class="app">
+    <header class="app-header">
+      <span class="logo">📎</span>
+      <h1>儲存網頁筆記</h1>
+      <button id="btnClose" class="btn-icon" title="關閉">✕</button>
+    </header>
+
+    <main class="form-body">
+      <div class="field">
+        <label for="inputUrl">來源網址</label>
+        <input type="url" id="inputUrl" placeholder="https://example.com">
+      </div>
+      <div class="field">
+        <label for="inputTitle">筆記標題</label>
+        <input type="text" id="inputTitle" placeholder="頁面標題">
+      </div>
+      <div class="field">
+        <label>截圖</label>
+        <div class="screenshot-preview">
+          <img id="screenshotImg" src="" alt="截圖預覽">
+          <div id="screenshotPlaceholder" class="placeholder">（無截圖）</div>
+        </div>
+        <div class="screenshot-actions">
+          <button id="btnRetake" class="btn btn-sm">重新截圖</button>
+          <button id="btnCrop" class="btn btn-sm">裁切</button>
+        </div>
+      </div>
+      <div class="field">
+        <label for="inputParagraph">重要段落</label>
+        <textarea id="inputParagraph" rows="4" placeholder="自動填入已選取的文字…"></textarea>
+      </div>
+      <div class="field">
+        <label for="inputNotes">個人筆記</label>
+        <textarea id="inputNotes" rows="3" placeholder="你的想法或備注…"></textarea>
+      </div>
+      <div class="field">
+        <label for="selectFolder">儲存到資料夾</label>
+        <div class="folder-row">
+          <select id="selectFolder"></select>
+          <button id="btnAddFolder" class="btn btn-sm">＋ 新增資料夾</button>
+        </div>
+        <div id="newFolderRow" class="new-folder-row hidden">
+          <input type="text" id="inputNewFolder" placeholder="法規/新子資料夾">
+          <button id="btnConfirmFolder" class="btn btn-sm btn-primary">確認</button>
+          <button id="btnCancelFolder" class="btn btn-sm">取消</button>
+        </div>
+      </div>
+      <div class="field">
+        <label>標籤</label>
+        <div id="tagsContainer" class="tags-container"></div>
+        <div class="tag-input-row">
+          <input type="text" id="inputTag" placeholder="輸入標籤後按 Enter" list="tagSuggestions">
+          <datalist id="tagSuggestions"></datalist>
+        </div>
+      </div>
+      <div class="field">
+        <label>日期</label>
+        <input type="text" id="inputDate" readonly>
+      </div>
+    </main>
+
+    <footer class="app-footer">
+      <div class="api-status">
+        <span id="footerDot" class="dot dot-unknown"></span>
+        <span id="footerStatus">檢查連線中…</span>
+      </div>
+      <div class="footer-actions">
+        <button id="btnCancel" class="btn">取消</button>
+        <button id="btnSave" class="btn btn-primary">儲存筆記 ✓</button>
+      </div>
+    </footer>
+
+    <div id="toast" class="toast hidden"></div>
+  </div>
+  <script src="capture.js"></script>
+</body>
+</html>
