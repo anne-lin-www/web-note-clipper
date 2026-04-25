@@ -19,7 +19,6 @@ def start_server(config: dict):
 
 
 def stop_server():
-    global _server
     if _server:
         _server.should_exit = True
 

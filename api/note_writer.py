@@ -1,7 +1,6 @@
 import base64
 import os
 import re
-from datetime import datetime
 
 
 # Characters illegal on Windows filenames

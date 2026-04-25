@@ -1,4 +1,3 @@
-import threading
 import pystray
 from PIL import Image, ImageDraw
 

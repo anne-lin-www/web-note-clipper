@@ -4,7 +4,7 @@ from pydantic import BaseModel
 from typing import List, Optional
 import os
 
-from config_loader import load_config, get_active_vault, switch_active_vault
+from config_loader import get_active_vault, switch_active_vault
 from note_writer import save_note
 from vault_manager import list_folders, extract_tags, initialize_vault_structure, create_folder
 
