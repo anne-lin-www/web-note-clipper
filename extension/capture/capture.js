@@ -1,6 +1,15 @@
-const API_BASE = 'http://localhost:8765';
+const DEFAULT_API_BASE = 'http://localhost:8765';
 let currentTags = [];
 let screenshotBase64 = '';
+
+async function getApiBase() {
+  try {
+    const { apiBaseUrl } = await chrome.storage.sync.get({ apiBaseUrl: DEFAULT_API_BASE });
+    return apiBaseUrl || DEFAULT_API_BASE;
+  } catch {
+    return DEFAULT_API_BASE;
+  }
+}
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -57,8 +66,9 @@ function setScreenshot(dataUrl) {
 async function checkHealth() {
   const dot = document.getElementById('footerDot');
   const status = document.getElementById('footerStatus');
+  const apiBase = await getApiBase();
   try {
-    const resp = await fetch(`${API_BASE}/health`, { signal: AbortSignal.timeout(3000) });
+    const resp = await fetch(`${apiBase}/health`, { signal: AbortSignal.timeout(3000) });
     const data = await resp.json();
     dot.className = 'dot dot-ok';
     status.textContent = `已連線到 ${data.active_vault}`;
@@ -70,8 +80,9 @@ async function checkHealth() {
 
 async function loadFolders() {
   const select = document.getElementById('selectFolder');
+  const apiBase = await getApiBase();
   try {
-    const resp = await fetch(`${API_BASE}/folders`);
+    const resp = await fetch(`${apiBase}/folders`);
     const { folders } = await resp.json();
     select.innerHTML = '';
     folders.forEach(f => {
@@ -97,8 +108,9 @@ async function loadFolders() {
 
 async function loadTags() {
   const datalist = document.getElementById('tagSuggestions');
+  const apiBase = await getApiBase();
   try {
-    const resp = await fetch(`${API_BASE}/tags`);
+    const resp = await fetch(`${apiBase}/tags`);
     const { tags } = await resp.json();
     datalist.innerHTML = '';
     tags.forEach(t => {
@@ -154,8 +166,9 @@ document.getElementById('btnCancelFolder').addEventListener('click', () => {
 document.getElementById('btnConfirmFolder').addEventListener('click', async () => {
   const path = document.getElementById('inputNewFolder').value.trim();
   if (!path) return;
+  const apiBase = await getApiBase();
   try {
-    await fetch(`${API_BASE}/folders`, {
+    await fetch(`${apiBase}/folders`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ path }),
@@ -214,8 +227,9 @@ document.getElementById('btnSave').addEventListener('click', async () => {
     screenshot_base64: screenshotBase64,
   };
 
+  const apiBase = await getApiBase();
   try {
-    const resp = await fetch(`${API_BASE}/save-note`, {
+    const resp = await fetch(`${apiBase}/save-note`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),

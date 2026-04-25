@@ -1,4 +1,13 @@
-const API_BASE = 'http://localhost:8765';
+const DEFAULT_API_BASE = 'http://localhost:8765';
+
+async function getApiBase() {
+  try {
+    const { apiBaseUrl } = await chrome.storage.sync.get({ apiBaseUrl: DEFAULT_API_BASE });
+    return apiBaseUrl || DEFAULT_API_BASE;
+  } catch {
+    return DEFAULT_API_BASE;
+  }
+}
 
 async function checkHealth() {
   const statusDot = document.getElementById('statusDot');
@@ -6,9 +15,10 @@ async function checkHealth() {
   const vaultInfo = document.getElementById('vaultInfo');
   const warningBox = document.getElementById('warningBox');
   const btnSave = document.getElementById('btnSave');
+  const apiBase = await getApiBase();
 
   try {
-    const resp = await fetch(`${API_BASE}/health`, { signal: AbortSignal.timeout(3000) });
+    const resp = await fetch(`${apiBase}/health`, { signal: AbortSignal.timeout(3000) });
     if (!resp.ok) throw new Error('HTTP ' + resp.status);
     const data = await resp.json();
     statusDot.className = 'dot dot-ok';

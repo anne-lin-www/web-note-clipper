@@ -1,5 +1,3 @@
-const API_BASE = 'http://localhost:8765';
-
 chrome.runtime.onInstalled.addListener(() => {
   chrome.contextMenus.create({
     id: 'save-to-note-clipper',
