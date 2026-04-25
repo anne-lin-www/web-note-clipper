@@ -63,7 +63,7 @@ def initialize_vault_structure(vault_path: str) -> None:
         '_inbox',
     ]
     for folder in folders:
-        os.makedirs(os.path.join(vault_path, folder), exist_ok=True)
+        os.makedirs(_safe_join(vault_path, folder), exist_ok=True)
 
 
 def create_folder(vault_path: str, folder_path: str) -> str:
