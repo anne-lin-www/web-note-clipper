@@ -168,11 +168,16 @@ document.getElementById('btnConfirmFolder').addEventListener('click', async () =
   if (!path) return;
   const apiBase = await getApiBase();
   try {
-    await fetch(`${apiBase}/folders`, {
+    const resp = await fetch(`${apiBase}/folders`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ path }),
     });
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({}));
+      showToast('建立資料夾失敗：' + (err.detail || resp.status), 'error');
+      return;
+    }
     await loadFolders();
     document.getElementById('selectFolder').value = path;
   } catch {
