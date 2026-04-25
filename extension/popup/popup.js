@@ -39,6 +39,14 @@ async function checkHealth() {
 document.getElementById('btnSave').addEventListener('click', async () => {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
 
+  let selectedText = '';
+  try {
+    const response = await chrome.tabs.sendMessage(tab.id, { action: 'getSelectedText' });
+    selectedText = response?.text || '';
+  } catch {
+    // content script unavailable on restricted pages (chrome://, extension pages, etc.)
+  }
+
   let screenshotDataUrl = '';
   try {
     screenshotDataUrl = await chrome.tabs.captureVisibleTab(tab.windowId, { format: 'png' });
@@ -50,7 +58,7 @@ document.getElementById('btnSave').addEventListener('click', async () => {
     pendingNote: {
       url: tab.url,
       title: tab.title,
-      selectedText: '',
+      selectedText,
       screenshotDataUrl,
       timestamp: Date.now(),
     },
