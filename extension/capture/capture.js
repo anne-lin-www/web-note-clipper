@@ -22,11 +22,17 @@ function addTagChip(tag) {
   const container = document.getElementById('tagsContainer');
   const chip = document.createElement('span');
   chip.className = 'tag-chip';
-  chip.innerHTML = `${tag} <button data-tag="${tag}" title="移除">×</button>`;
-  chip.querySelector('button').addEventListener('click', () => {
+  const tagText = document.createTextNode(tag + ' ');
+  const removeBtn = document.createElement('button');
+  removeBtn.setAttribute('data-tag', tag);
+  removeBtn.setAttribute('title', '移除');
+  removeBtn.textContent = '×';
+  removeBtn.addEventListener('click', () => {
     currentTags = currentTags.filter(t => t !== tag);
     chip.remove();
   });
+  chip.appendChild(tagText);
+  chip.appendChild(removeBtn);
   container.appendChild(chip);
 }
 

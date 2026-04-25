@@ -54,6 +54,15 @@ def build_md_content(
     return '\n'.join(lines)
 
 
+def _safe_join(base: str, *parts: str) -> str:
+    """Join paths and raise ValueError if the result escapes base directory."""
+    result = os.path.realpath(os.path.join(base, *parts))
+    base_real = os.path.realpath(base)
+    if not result.startswith(base_real + os.sep) and result != base_real:
+        raise ValueError(f"Path traversal detected: {result!r} is outside {base_real!r}")
+    return result
+
+
 def save_note(
     vault_path: str,
     title: str,
@@ -69,18 +78,18 @@ def save_note(
     safe_title = sanitize_filename(title)
     date_month = date[:7]  # YYYY-MM
 
-    # Paths
-    note_dir = os.path.join(vault_path, folder)
+    # Paths — validate that folder stays inside the vault
+    note_dir = _safe_join(vault_path, folder)
     os.makedirs(note_dir, exist_ok=True)
 
     md_filename = f"{date}_{safe_title}.md"
-    md_path = os.path.join(note_dir, md_filename)
+    md_path = _safe_join(note_dir, md_filename)
 
-    screenshot_dir = os.path.join(vault_path, '_assets', 'screenshots', date_month)
+    screenshot_dir = _safe_join(vault_path, '_assets', 'screenshots', date_month)
     os.makedirs(screenshot_dir, exist_ok=True)
 
     screenshot_filename = f"{date}_{safe_title}.png"
-    screenshot_path = os.path.join(screenshot_dir, screenshot_filename)
+    screenshot_path = _safe_join(screenshot_dir, screenshot_filename)
 
     # Write markdown
     md_content = build_md_content(

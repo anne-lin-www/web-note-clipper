@@ -2,6 +2,15 @@ import os
 import re
 
 
+def _safe_join(base: str, *parts: str) -> str:
+    """Join paths and raise ValueError if the result escapes base directory."""
+    result = os.path.realpath(os.path.join(base, *parts))
+    base_real = os.path.realpath(base)
+    if not result.startswith(base_real + os.sep) and result != base_real:
+        raise ValueError(f"Path traversal detected: {result!r} is outside {base_real!r}")
+    return result
+
+
 def list_folders(vault_path: str) -> list:
     """Return all sub-folder paths relative to vault_path, excluding hidden folders."""
     result = []
@@ -59,6 +68,6 @@ def initialize_vault_structure(vault_path: str) -> None:
 
 def create_folder(vault_path: str, folder_path: str) -> str:
     """Create a new folder inside vault_path. Returns the full path."""
-    full_path = os.path.join(vault_path, folder_path)
+    full_path = _safe_join(vault_path, folder_path)
     os.makedirs(full_path, exist_ok=True)
     return full_path

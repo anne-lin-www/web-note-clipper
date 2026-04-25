@@ -9,6 +9,8 @@ jobs:
   build-windows-exe:
     runs-on: windows-latest
     environment: production
+    permissions:
+      contents: write
 
     steps:
       - uses: actions/checkout@v4
