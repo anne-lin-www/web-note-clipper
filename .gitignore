@@ -1,6 +1,9 @@
 # User config (contains local vault path with username)
 config.json
 
+# Virtual environment
+.venv/
+
 # Build artifacts
 dist/
 build/

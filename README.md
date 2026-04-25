@@ -43,15 +43,32 @@
 
 ### 方式二：從原始碼執行（開發者）
 
-需要先安裝 Python 3.11+。
+需要透過 [Scoop](https://scoop.sh/) 安裝 Python 與 uv：
 
-```bash
+```powershell
+scoop install python uv
+```
+
+建立並啟用虛擬環境，安裝依賴：
+
+```powershell
 cd api
-pip install -r requirements.txt
-cp config.example.json config.json
+uv venv
+.venv\Scripts\Activate.ps1   # PowerShell
+# 或 .venv\Scripts\activate.bat  # cmd
+
+uv pip install -r requirements.txt
+```
+
+設定 config 並啟動：
+
+```powershell
+copy config.example.json config.json
 # 編輯 config.json，填入您的 Obsidian Vault 路徑
 python main.py
 ```
+
+> 虛擬環境資料夾 `.venv` 已加入 `.gitignore`，不會上傳至 GitHub。
 
 ---
 
@@ -240,15 +257,20 @@ web-note-clipper/
 
 ## 開發者指南
 
-```bash
-# 安裝開發依賴
-pip install -r api/requirements-dev.txt
+```powershell
+# 建立虛擬環境（僅第一次）
+cd api
+uv venv
+.venv\Scripts\Activate.ps1
+
+# 安裝開發依賴（含 pytest、flake8）
+uv pip install -r requirements-dev.txt
 
 # 執行單元測試
-pytest api/tests/ -v
+pytest tests/ -v
 
 # 程式碼風格檢查
-flake8 api/ --max-line-length=100 --exclude=__pycache__,api/tests
+flake8 . --max-line-length=100 --exclude=__pycache__,tests
 ```
 
 ### CI/CD 流程
