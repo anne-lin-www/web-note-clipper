@@ -17,7 +17,7 @@ _middleware_added = False
 # Add CORS middleware once at import time with permissive defaults
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["http://localhost", "http://127.0.0.1"],
     allow_origin_regex=r'chrome-extension://.*',
     allow_credentials=False,
     allow_methods=["*"],

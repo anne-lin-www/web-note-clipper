@@ -14,11 +14,11 @@ def _create_icon_image() -> Image.Image:
 def create_tray_icon(start_cb, stop_cb, exit_cb) -> pystray.Icon:
     image = _create_icon_image()
     menu = pystray.Menu(
-        pystray.MenuItem("Start Service", start_cb),
-        pystray.MenuItem("Stop Service", stop_cb),
-        pystray.MenuItem("Exit", exit_cb),
+        pystray.MenuItem("啟動服務", start_cb),
+        pystray.MenuItem("停止服務", stop_cb),
+        pystray.MenuItem("結束", exit_cb),
     )
-    icon = pystray.Icon("web-note-clipper", image, "Web Note Clipper", menu)
+    icon = pystray.Icon("web-note-clipper", image, "網頁筆記小工具", menu)
     return icon
 
 

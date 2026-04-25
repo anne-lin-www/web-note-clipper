@@ -28,6 +28,7 @@ jobs:
       - name: Build with PyInstaller
         run: |
           pyinstaller --onefile --windowed --name web-note-clipper `
+            --paths api `
             --add-data "api/config.example.json;." `
             api/main.py
 
@@ -38,7 +39,8 @@ jobs:
             Write-Error "dist/web-note-clipper.exe not found!"
             exit 1
           }
-          Write-Output "Build successful: dist/web-note-clipper.exe"
+          $size = (Get-Item "dist/web-note-clipper.exe").Length
+          Write-Output "Build successful: dist/web-note-clipper.exe ($size bytes)"
 
       - name: Upload to GitHub Releases
         uses: softprops/action-gh-release@v2
