@@ -87,8 +87,8 @@ def test_save_note_file_content(client, vault):
     file_path = resp.json()["file_path"]
     with open(file_path, encoding='utf-8') as f:
         content = f.read()
-    assert 'title: 測試筆記2' in content
-    assert 'tags: [重要]' in content
+    assert '標題: 測試筆記2' in content
+    assert '標籤: [重要]' in content
 
 
 def test_get_tags_returns_list(client, vault):
