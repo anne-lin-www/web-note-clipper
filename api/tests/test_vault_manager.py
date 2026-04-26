@@ -16,7 +16,7 @@ def test_list_folders_with_structure(tmp_path):
     assert '法規' in folders
     assert '法規/勞動法規' in folders
     assert '法規/稅務法規' in folders
-    assert '_inbox' in folders
+    assert '_inbox' not in folders
 
 
 def test_list_folders_excludes_hidden(tmp_path):

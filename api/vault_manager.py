@@ -5,7 +5,8 @@ from path_utils import _safe_join
 
 
 def list_folders(vault_path: str) -> list:
-    """Return all sub-folder paths relative to vault_path, excluding hidden and internal (_) folders."""
+    """Return all sub-folder paths relative to vault_path,
+    excluding hidden and internal (_) folders."""
     result = []
     for root, dirs, _ in os.walk(vault_path):
         dirs[:] = [d for d in dirs if not d.startswith('.') and not d.startswith('_')]
