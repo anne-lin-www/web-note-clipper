@@ -125,6 +125,7 @@ async function loadTags() {
 
 function renderTagDropdown(query) {
   const dropdown = document.getElementById('tagDropdown');
+  if (!dropdown) return false;
   const q = query.trim().toLowerCase();
   const matches = q ? allTags.filter(t => t.toLowerCase().includes(q) && !currentTags.includes(t))
                      : allTags.filter(t => !currentTags.includes(t));
@@ -151,7 +152,7 @@ function renderTagDropdown(query) {
 }
 
 function closeTagDropdown() {
-  document.getElementById('tagDropdown').classList.add('hidden');
+  document.getElementById('tagDropdown')?.classList.add('hidden');
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────────
@@ -173,6 +174,11 @@ async function init() {
   await Promise.all([checkHealth(), loadFolders(), loadTags()]);
 }
 
+// ── Init ─────────────────────────────────────────────────────────────────────
+// Called before event listeners so it always runs even if listener setup throws
+
+init();
+
 // ── Event listeners ───────────────────────────────────────────────────────────
 
 document.getElementById('btnClose').addEventListener('click', () => window.close());
@@ -181,54 +187,58 @@ document.getElementById('btnCancel').addEventListener('click', () => window.clos
 const inputTag = document.getElementById('inputTag');
 const tagDropdown = document.getElementById('tagDropdown');
 
-inputTag.addEventListener('input', () => {
-  renderTagDropdown(inputTag.value);
-});
+if (inputTag) {
+  inputTag.addEventListener('input', () => {
+    renderTagDropdown(inputTag.value);
+  });
 
-inputTag.addEventListener('focus', () => {
-  renderTagDropdown(inputTag.value);
-});
+  inputTag.addEventListener('focus', () => {
+    renderTagDropdown(inputTag.value);
+  });
 
-inputTag.addEventListener('keydown', e => {
-  const items = [...tagDropdown.querySelectorAll('li')];
-  const activeIdx = items.findIndex(li => li.classList.contains('active'));
+  inputTag.addEventListener('keydown', e => {
+    const items = [...(tagDropdown?.querySelectorAll('li') ?? [])];
+    const activeIdx = items.findIndex(li => li.classList.contains('active'));
 
-  if (e.key === 'ArrowDown') {
-    e.preventDefault();
-    items[activeIdx]?.classList.remove('active');
-    const next = items[(activeIdx + 1) % items.length];
-    next?.classList.add('active');
-    next?.scrollIntoView({ block: 'nearest' });
-  } else if (e.key === 'ArrowUp') {
-    e.preventDefault();
-    items[activeIdx]?.classList.remove('active');
-    const prev = items[(activeIdx - 1 + items.length) % items.length];
-    prev?.classList.add('active');
-    prev?.scrollIntoView({ block: 'nearest' });
-  } else if (e.key === 'Enter') {
-    e.preventDefault();
-    const active = tagDropdown.querySelector('li.active');
-    if (active) {
-      addTagChip(active.dataset.value);
-      inputTag.value = '';
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      items[activeIdx]?.classList.remove('active');
+      const next = items[(activeIdx + 1) % items.length];
+      next?.classList.add('active');
+      next?.scrollIntoView({ block: 'nearest' });
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      items[activeIdx]?.classList.remove('active');
+      const prev = items[(activeIdx - 1 + items.length) % items.length];
+      prev?.classList.add('active');
+      prev?.scrollIntoView({ block: 'nearest' });
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      const active = tagDropdown?.querySelector('li.active');
+      if (active) {
+        addTagChip(active.dataset.value);
+        inputTag.value = '';
+        closeTagDropdown();
+      } else {
+        const val = inputTag.value.trim();
+        if (val) { addTagChip(val); inputTag.value = ''; closeTagDropdown(); }
+      }
+    } else if (e.key === 'Escape') {
       closeTagDropdown();
-    } else {
-      const val = inputTag.value.trim();
-      if (val) { addTagChip(val); inputTag.value = ''; closeTagDropdown(); }
     }
-  } else if (e.key === 'Escape') {
-    closeTagDropdown();
-  }
-});
+  });
+}
 
-tagDropdown.addEventListener('mousedown', e => {
-  const li = e.target.closest('li');
-  if (!li) return;
-  e.preventDefault();
-  addTagChip(li.dataset.value);
-  inputTag.value = '';
-  closeTagDropdown();
-});
+if (tagDropdown) {
+  tagDropdown.addEventListener('mousedown', e => {
+    const li = e.target.closest('li');
+    if (!li) return;
+    e.preventDefault();
+    addTagChip(li.dataset.value);
+    inputTag.value = '';
+    closeTagDropdown();
+  });
+}
 
 document.addEventListener('click', e => {
   if (!e.target.closest('.tag-autocomplete')) closeTagDropdown();
@@ -246,6 +256,7 @@ document.getElementById('btnConfirmFolder').addEventListener('click', async () =
   const path = document.getElementById('inputNewFolder').value.trim();
   if (!path) return;
   const apiBase = await getApiBase();
+  let created = false;
   try {
     const resp = await fetch(`${apiBase}/folders`, {
       method: 'POST',
@@ -255,12 +266,23 @@ document.getElementById('btnConfirmFolder').addEventListener('click', async () =
     if (!resp.ok) {
       const err = await resp.json().catch(() => ({}));
       showToast('建立資料夾失敗：' + (err.detail || resp.status), 'error');
+      document.getElementById('newFolderRow').classList.add('hidden');
+      document.getElementById('inputNewFolder').value = '';
       return;
     }
+    created = true;
     await loadFolders();
-    document.getElementById('selectFolder').value = path;
+    const sel = document.getElementById('selectFolder');
+    if (![...sel.options].some(o => o.value === path)) {
+      const opt = document.createElement('option');
+      opt.value = path;
+      opt.textContent = path.replace(/\//g, ' / ');
+      sel.appendChild(opt);
+    }
+    sel.value = path;
+    showToast(`✓ 資料夾已建立：${path}`, 'success');
   } catch {
-    showToast('建立資料夾失敗', 'error');
+    showToast(created ? '載入資料夾列表失敗' : '建立資料夾失敗', 'error');
   }
   document.getElementById('newFolderRow').classList.add('hidden');
   document.getElementById('inputNewFolder').value = '';
@@ -341,5 +363,3 @@ document.getElementById('btnSave').addEventListener('click', async () => {
     showToast('網路錯誤：' + e.message, 'error');
   }
 });
-
-init();

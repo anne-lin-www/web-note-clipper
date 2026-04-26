@@ -44,7 +44,16 @@ document.getElementById('btnSave').addEventListener('click', async () => {
     const response = await chrome.tabs.sendMessage(tab.id, { action: 'getSelectedText' });
     selectedText = response?.text || '';
   } catch {
-    // content script unavailable on restricted pages (chrome://, extension pages, etc.)
+    // Content script unavailable or orphaned after extension reload — fallback to scripting API
+    try {
+      const [{ result }] = await chrome.scripting.executeScript({
+        target: { tabId: tab.id },
+        func: () => window.getSelection()?.toString() ?? '',
+      });
+      selectedText = result || '';
+    } catch {
+      // Restricted page (chrome://, extension pages, etc.)
+    }
   }
 
   let screenshotDataUrl = '';

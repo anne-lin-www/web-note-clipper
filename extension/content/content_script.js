@@ -1,6 +1,15 @@
+let savedSelection = '';
+
+document.addEventListener('selectionchange', () => {
+  const sel = window.getSelection()?.toString() ?? '';
+  if (sel) savedSelection = sel;
+});
+
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === 'getSelectedText') {
-    sendResponse({ text: window.getSelection().toString() });
+    const current = window.getSelection()?.toString() ?? '';
+    sendResponse({ text: current || savedSelection });
+    savedSelection = '';
     return true;
   }
 
