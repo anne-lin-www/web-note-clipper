@@ -34,16 +34,16 @@ def test_build_md_content_structure():
         date_month='2026-04',
     )
     assert '---' in content
-    assert 'title: Test Note' in content
-    assert 'url: https://example.com' in content
-    assert 'date: 2026-04-25' in content
-    assert 'tags: [法條, 重要]' in content
-    assert 'folder: 法規/勞動法規' in content
-    assert '## Key Paragraph' in content
+    assert '標題: Test Note' in content
+    assert '來源網址: https://example.com' in content
+    assert '擷取日期: 2026-04-25' in content
+    assert '標籤: [法條, 重要]' in content
+    assert '資料夾: 法規/勞動法規' in content
+    assert '## 重要段落' in content
     assert '> Some selected text' in content
-    assert '## Personal Notes' in content
+    assert '## 個人筆記' in content
     assert 'My comment' in content
-    assert '## Screenshot' in content
+    assert '## 截圖' in content
     assert '![[2026-04-25_Test Note.png]]' in content
 
 
@@ -63,8 +63,8 @@ def test_save_note_creates_md_file(tmp_path):
     assert os.path.exists(result['file_path'])
     with open(result['file_path'], encoding='utf-8') as f:
         content = f.read()
-    assert 'title: Test Note' in content
-    assert 'url: https://example.com' in content
+    assert '標題: Test Note' in content
+    assert '來源網址: https://example.com' in content
 
 
 def test_save_note_screenshot_saved(tmp_path):
