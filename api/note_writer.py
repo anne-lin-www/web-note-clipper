@@ -37,6 +37,17 @@ def _next_versioned_path(note_dir: str, base_name: str) -> str:
         v += 1
 
 
+def _extract_screenshot_filename(md_path: str) -> str | None:
+    """Return the screenshot filename stored in an existing note's frontmatter, or None."""
+    try:
+        with open(md_path, encoding='utf-8') as f:
+            content = f.read()
+        m = re.search(r'截圖路徑:\s*_assets/screenshots/[^/\s]+/([^\s]+\.png)', content)
+        return m.group(1) if m else None
+    except OSError:
+        return None
+
+
 def _next_screenshot_filename(screenshot_dir: str, date: str) -> str:
     """Return the next available sequential screenshot filename: YYYY-MM-DD_001.png
     Sequential numbering avoids title-length and illegal-character issues, and
@@ -81,8 +92,6 @@ def build_md_content(
     ]
 
     body = [
-        '',
-        f'# {title}',
         '',
         '## 截圖',
         f'![[{screenshot_filename}]]',
@@ -142,7 +151,13 @@ def save_note(
     # ── Resolve screenshot filename before building MD ────────
     screenshot_dir = _safe_join(vault_path, '_assets', 'screenshots', date_month)
     os.makedirs(screenshot_dir, exist_ok=True)
-    screenshot_filename = _next_screenshot_filename(screenshot_dir, date)
+    if overwrite and os.path.exists(_safe_join(note_dir, md_filename)):
+        screenshot_filename = (
+            _extract_screenshot_filename(_safe_join(note_dir, md_filename))
+            or _next_screenshot_filename(screenshot_dir, date)
+        )
+    else:
+        screenshot_filename = _next_screenshot_filename(screenshot_dir, date)
     screenshot_path = _safe_join(screenshot_dir, screenshot_filename)
 
     # ── Write markdown ────────────────────────────────────────
