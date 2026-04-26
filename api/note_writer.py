@@ -26,6 +26,16 @@ def sanitize_filename(title: str) -> str:
     return _ILLEGAL_CHARS.sub('', title).strip()
 
 
+def _next_versioned_path(note_dir: str, base_name: str) -> str:
+    """Return the first non-existing path for base_name_2.md, _3.md, …"""
+    v = 2
+    while True:
+        candidate = _safe_join(note_dir, f"{base_name}_{v}.md")
+        if not os.path.exists(candidate):
+            return candidate
+        v += 1
+
+
 def build_md_content(
     title: str,
     url: str,
@@ -77,25 +87,34 @@ def save_note(
     key_paragraph: str,
     personal_note: str,
     screenshot_base64: str,
+    overwrite: bool = False,
+    new_version: bool = False,
 ) -> dict:
-    """Create the .md file and save the screenshot PNG. Returns file paths."""
+    """
+    Create the .md file and save the screenshot PNG.
+
+    Returns:
+      {'conflict': True, 'existing_filename': str}  — file exists, no resolution flag set
+      {'file_path': str, 'screenshot_path': str}    — written successfully
+    """
     safe_title = sanitize_filename(title)
     date_month = date[:7]  # YYYY-MM
 
-    # Paths — validate that folder stays inside the vault
     note_dir = _safe_join(vault_path, folder)
     os.makedirs(note_dir, exist_ok=True)
 
-    md_filename = f"{date}_{safe_title}.md"
+    base_name = f"{date}_{safe_title}"
+    md_filename = f"{base_name}.md"
     md_path = _safe_join(note_dir, md_filename)
 
-    screenshot_dir = _safe_join(vault_path, '_assets', 'screenshots', date_month)
-    os.makedirs(screenshot_dir, exist_ok=True)
+    # ── Conflict detection ────────────────────────────────────
+    if os.path.exists(md_path) and not overwrite and not new_version:
+        return {'conflict': True, 'existing_filename': md_filename}
 
-    screenshot_filename = f"{date}_{safe_title}.png"
-    screenshot_path = _safe_join(screenshot_dir, screenshot_filename)
+    if new_version and os.path.exists(md_path):
+        md_path = _next_versioned_path(note_dir, base_name)
 
-    # Write markdown
+    # ── Write markdown ────────────────────────────────────────
     md_content = build_md_content(
         title=title,
         url=url,
@@ -110,7 +129,11 @@ def save_note(
     with open(md_path, 'w', encoding='utf-8') as f:
         f.write(md_content)
 
-    # Write screenshot
+    # ── Write screenshot ──────────────────────────────────────
+    screenshot_dir = _safe_join(vault_path, '_assets', 'screenshots', date_month)
+    os.makedirs(screenshot_dir, exist_ok=True)
+    screenshot_path = _safe_join(screenshot_dir, f"{date}_{safe_title}.png")
+
     if screenshot_base64:
         img_data = base64.b64decode(screenshot_base64)
         with open(screenshot_path, 'wb') as f:

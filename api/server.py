@@ -45,6 +45,8 @@ class SaveNoteRequest(BaseModel):
     key_paragraph: str = ""
     personal_note: str = ""
     screenshot_base64: str = ""
+    overwrite: bool = False
+    new_version: bool = False
 
 
 class CreateFolderRequest(BaseModel):
@@ -77,7 +79,7 @@ def api_save_note(req: SaveNoteRequest):
         )
 
     try:
-        paths = save_note(
+        result = save_note(
             vault_path=vault_path,
             title=req.title,
             url=req.url,
@@ -87,14 +89,23 @@ def api_save_note(req: SaveNoteRequest):
             key_paragraph=req.key_paragraph,
             personal_note=req.personal_note,
             screenshot_base64=req.screenshot_base64,
+            overwrite=req.overwrite,
+            new_version=req.new_version,
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"儲存失敗：{str(e)}")
 
+    if result.get('conflict'):
+        return {
+            "success": False,
+            "conflict": True,
+            "existing_filename": result['existing_filename'],
+        }
+
     return {
         "success": True,
-        "file_path": paths['file_path'],
-        "screenshot_path": paths['screenshot_path'],
+        "file_path": result['file_path'],
+        "screenshot_path": result['screenshot_path'],
     }
 
 

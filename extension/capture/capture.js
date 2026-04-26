@@ -314,25 +314,37 @@ document.getElementById('btnCrop').addEventListener('click', async () => {
   }
 });
 
-document.getElementById('btnSave').addEventListener('click', async () => {
-  const title = document.getElementById('inputTitle').value.trim();
-  const url = document.getElementById('inputUrl').value.trim();
-  const date = document.getElementById('inputDate').value;
-  const folder = document.getElementById('selectFolder').value;
-  const keyParagraph = document.getElementById('inputParagraph').value.trim();
-  const personalNote = document.getElementById('inputNotes').value.trim();
-
-  if (!title) { showToast('請輸入筆記標題', 'error'); return; }
-  if (!url) { showToast('請輸入來源網址', 'error'); return; }
-
-  const payload = {
-    title, url, date, folder,
-    tags: currentTags,
-    key_paragraph: keyParagraph,
-    personal_note: personalNote,
+function buildPayload() {
+  return {
+    title:            document.getElementById('inputTitle').value.trim(),
+    url:              document.getElementById('inputUrl').value.trim(),
+    date:             document.getElementById('inputDate').value,
+    folder:           document.getElementById('selectFolder').value,
+    tags:             currentTags,
+    key_paragraph:    document.getElementById('inputParagraph').value.trim(),
+    personal_note:    document.getElementById('inputNotes').value.trim(),
     screenshot_base64: screenshotBase64,
   };
+}
 
+function showSaveSuccess() {
+  let countdown = 3;
+  const toast = document.getElementById('toast');
+  toast.textContent = `✓ 已儲存！${countdown} 秒後關閉…`;
+  toast.className = 'toast toast-success';
+  toast.classList.remove('hidden');
+  const timer = setInterval(() => {
+    countdown--;
+    if (countdown > 0) {
+      toast.textContent = `✓ 已儲存！${countdown} 秒後關閉…`;
+    } else {
+      clearInterval(timer);
+      window.close();
+    }
+  }, 1000);
+}
+
+async function performSave(payload) {
   const apiBase = await getApiBase();
   try {
     const resp = await fetch(`${apiBase}/save-note`, {
@@ -341,25 +353,51 @@ document.getElementById('btnSave').addEventListener('click', async () => {
       body: JSON.stringify(payload),
     });
     const data = await resp.json();
+
+    if (data.conflict) {
+      showConflictModal(data.existing_filename, payload);
+      return;
+    }
     if (data.success) {
-      let countdown = 3;
-      const toast = document.getElementById('toast');
-      toast.textContent = `✓ 已儲存！${countdown} 秒後關閉…`;
-      toast.className = 'toast toast-success';
-      toast.classList.remove('hidden');
-      const timer = setInterval(() => {
-        countdown--;
-        if (countdown > 0) {
-          toast.textContent = `✓ 已儲存！${countdown} 秒後關閉…`;
-        } else {
-          clearInterval(timer);
-          window.close();
-        }
-      }, 1000);
+      showSaveSuccess();
     } else {
       showToast('儲存失敗：' + (data.detail || '未知錯誤'), 'error');
     }
   } catch (e) {
     showToast('網路錯誤：' + e.message, 'error');
   }
+}
+
+function showConflictModal(filename, originalPayload) {
+  document.getElementById('conflictFilename').textContent = filename;
+  document.getElementById('conflictModal').classList.remove('hidden');
+
+  // One-time listeners — cloned nodes discard previous listeners
+  const btnOverwrite = document.getElementById('btnOverwrite');
+  const btnNewVersion = document.getElementById('btnNewVersion');
+  const btnConflictCancel = document.getElementById('btnConflictCancel');
+
+  const fresh = (el) => { const c = el.cloneNode(true); el.replaceWith(c); return c; };
+  const ow = fresh(btnOverwrite);
+  const nv = fresh(btnNewVersion);
+  const cc = fresh(btnConflictCancel);
+
+  const closeModal = () => document.getElementById('conflictModal').classList.add('hidden');
+
+  ow.addEventListener('click', () => {
+    closeModal();
+    performSave({ ...originalPayload, overwrite: true });
+  });
+  nv.addEventListener('click', () => {
+    closeModal();
+    performSave({ ...originalPayload, new_version: true });
+  });
+  cc.addEventListener('click', closeModal);
+}
+
+document.getElementById('btnSave').addEventListener('click', async () => {
+  const payload = buildPayload();
+  if (!payload.title) { showToast('請輸入筆記標題', 'error'); return; }
+  if (!payload.url)   { showToast('請輸入來源網址', 'error'); return; }
+  await performSave(payload);
 });
