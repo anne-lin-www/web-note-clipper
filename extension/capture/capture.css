@@ -280,6 +280,179 @@ textarea { resize: vertical; }
 .toast-success { background: #1e8449; }
 .toast-error { background: #c0392b; }
 
+/* ── Screenshot preview clickable hint ──────────────────── */
+.screenshot-preview { cursor: pointer; }
+.screenshot-preview:hover { opacity: .9; }
+
+/* ── Shared dialog styles ────────────────────────────────── */
+.dialog-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px 12px;
+  border-bottom: 1.5px solid #e9ecef;
+  flex-shrink: 0;
+}
+.dialog-title { font-size: 18px; font-weight: 700; color: #222; }
+
+.dialog-hints {
+  list-style: none;
+  padding: 12px 24px;
+  margin: 0;
+  background: #f0f6fb;
+  border-bottom: 1px solid #d6eaf8;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 24px;
+  flex-shrink: 0;
+}
+.dialog-hints li { font-size: 14px; color: #444; line-height: 1.6; }
+.dialog-hints li::before { content: "• "; color: #2471a3; font-weight: 700; }
+
+.dialog-footer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 24px;
+  border-top: 1.5px solid #e9ecef;
+  background: #f8f9fa;
+  flex-shrink: 0;
+}
+
+/* ── Preview modal ───────────────────────────────────────── */
+.preview-dialog {
+  background: #fff;
+  border-radius: 10px;
+  width: 88vw;
+  max-width: 1100px;
+  max-height: 92vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 12px 48px rgba(0,0,0,.3);
+}
+
+.preview-viewport {
+  flex: 1;
+  overflow: hidden;
+  background: #111;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: grab;
+  min-height: 200px;
+}
+.preview-viewport.grabbing { cursor: grabbing; }
+
+#previewImg {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  display: block;
+  transform-origin: center center;
+  user-select: none;
+  transition: transform .05s linear;
+}
+
+.preview-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 24px;
+  background: #f8f9fa;
+  border-top: 1.5px solid #e9ecef;
+  flex-shrink: 0;
+}
+.zoom-label {
+  font-size: 15px;
+  font-weight: 700;
+  color: #2471a3;
+  min-width: 52px;
+  text-align: center;
+}
+
+/* ── Crop modal ──────────────────────────────────────────── */
+.crop-dialog {
+  background: #fff;
+  border-radius: 10px;
+  width: 92vw;
+  max-width: 1200px;
+  max-height: 94vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 12px 48px rgba(0,0,0,.3);
+}
+
+.crop-hints { list-style: decimal inside; }
+.crop-hints li { font-size: 14px; }
+.crop-hints li::before { content: none; }
+
+.crop-viewport {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  background: #1a1a1a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: crosshair;
+  min-height: 240px;
+  user-select: none;
+}
+
+#cropImg {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  display: block;
+  pointer-events: none;
+  user-select: none;
+}
+
+.crop-shade {
+  position: absolute;
+  background: rgba(0, 0, 0, .58);
+  pointer-events: none;
+}
+
+.crop-selection {
+  position: absolute;
+  border: 2px solid #fff;
+  cursor: move;
+  box-sizing: border-box;
+}
+
+.crop-handle {
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  background: #fff;
+  border: 2px solid #2471a3;
+  border-radius: 3px;
+}
+/* Larger invisible hit area for easier grabbing */
+.crop-handle::before {
+  content: '';
+  position: absolute;
+  inset: -8px;
+}
+
+.crop-handle[data-dir="nw"] { top: -9px;  left: -9px;              cursor: nw-resize; }
+.crop-handle[data-dir="n"]  { top: -9px;  left: calc(50% - 9px);   cursor: n-resize;  }
+.crop-handle[data-dir="ne"] { top: -9px;  right: -9px;             cursor: ne-resize; }
+.crop-handle[data-dir="w"]  { top: calc(50% - 9px); left: -9px;    cursor: w-resize;  }
+.crop-handle[data-dir="e"]  { top: calc(50% - 9px); right: -9px;   cursor: e-resize;  }
+.crop-handle[data-dir="sw"] { bottom: -9px; left: -9px;            cursor: sw-resize; }
+.crop-handle[data-dir="s"]  { bottom: -9px; left: calc(50% - 9px); cursor: s-resize;  }
+.crop-handle[data-dir="se"] { bottom: -9px; right: -9px;           cursor: se-resize; }
+
+.crop-size-label {
+  flex: 1;
+  font-size: 14px;
+  color: #666;
+}
+
 /* ── Conflict modal ──────────────────────────────────────── */
 .modal-overlay {
   position: fixed;

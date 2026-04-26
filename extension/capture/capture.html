@@ -31,18 +31,19 @@
       <aside class="panel-left">
         <div class="field">
           <label>截圖預覽</label>
-          <div class="screenshot-preview">
+          <div class="screenshot-preview" id="screenshotPreviewBox">
             <img id="screenshotImg" src="" alt="截圖預覽">
             <div id="screenshotPlaceholder" class="placeholder">（尚無截圖）</div>
           </div>
           <div class="screenshot-actions">
-            <button id="btnRetake" class="btn btn-sm">
-              <!-- camera -->
+            <button id="btnPreview" class="btn btn-sm">
+              <!-- zoom-in -->
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/>
-                <circle cx="12" cy="13" r="3"/>
+                <circle cx="11" cy="11" r="8"/>
+                <path d="m21 21-4.3-4.3"/>
+                <path d="M11 8v6"/><path d="M8 11h6"/>
               </svg>
-              重新截圖
+              放大檢視
             </button>
             <button id="btnCrop" class="btn btn-sm">
               <!-- crop -->
@@ -50,7 +51,7 @@
                 <path d="M6 2v14a2 2 0 0 0 2 2h14"/>
                 <path d="M18 22V8a2 2 0 0 0-2-2H2"/>
               </svg>
-              裁切
+              裁切截圖
             </button>
           </div>
         </div>
@@ -157,6 +158,96 @@
         </div>
       </div>
     </div>
+
+    <!-- 截圖放大預覽 -->
+    <div id="previewModal" class="modal-overlay hidden" role="dialog" aria-label="截圖放大預覽">
+      <div class="preview-dialog">
+        <div class="dialog-header">
+          <span class="dialog-title">截圖放大預覽</span>
+          <button id="btnClosePreview" class="btn btn-sm">關閉</button>
+        </div>
+        <ul class="dialog-hints">
+          <li>使用下方「放大」、「縮小」按鈕調整大小</li>
+          <li>放大後，可按住圖片拖曳移動</li>
+          <li>滑鼠滾輪也可放大縮小</li>
+        </ul>
+        <div class="preview-viewport" id="previewViewport">
+          <img id="previewImg" draggable="false" alt="截圖放大檢視">
+        </div>
+        <div class="preview-controls">
+          <button id="btnZoomOut" class="btn btn-sm">
+            <!-- zoom-out -->
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="11" cy="11" r="8"/>
+              <path d="m21 21-4.3-4.3"/><path d="M8 11h6"/>
+            </svg>
+            縮小
+          </button>
+          <span id="zoomLevel" class="zoom-label">100%</span>
+          <button id="btnZoomIn" class="btn btn-sm">
+            <!-- zoom-in -->
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="11" cy="11" r="8"/>
+              <path d="m21 21-4.3-4.3"/>
+              <path d="M11 8v6"/><path d="M8 11h6"/>
+            </svg>
+            放大
+          </button>
+          <button id="btnZoomReset" class="btn btn-sm">
+            <!-- maximize -->
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/>
+              <path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/>
+            </svg>
+            還原原尺寸
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 截圖裁切 -->
+    <div id="cropModal" class="modal-overlay hidden" role="dialog" aria-label="裁切截圖">
+      <div class="crop-dialog">
+        <div class="dialog-header">
+          <span class="dialog-title">裁切截圖</span>
+        </div>
+        <ol class="dialog-hints crop-hints">
+          <li>拖曳<strong>四個角落</strong>白色方塊 → 同時調整相鄰兩邊</li>
+          <li>拖曳<strong>四條邊框</strong>白色方塊 → 只調整該邊</li>
+          <li>拖曳<strong>選取框中間</strong> → 移動整個選取範圍</li>
+          <li>在選取框<strong>外側拖曳</strong> → 重新畫選取範圍</li>
+        </ol>
+        <div class="crop-viewport" id="cropViewport">
+          <img id="cropImg" draggable="false" alt="裁切截圖">
+          <div id="cropShadeTop"    class="crop-shade"></div>
+          <div id="cropShadeBottom" class="crop-shade"></div>
+          <div id="cropShadeLeft"   class="crop-shade"></div>
+          <div id="cropShadeRight"  class="crop-shade"></div>
+          <div id="cropSelection" class="crop-selection hidden">
+            <div class="crop-handle" data-dir="nw"></div>
+            <div class="crop-handle" data-dir="n"></div>
+            <div class="crop-handle" data-dir="ne"></div>
+            <div class="crop-handle" data-dir="w"></div>
+            <div class="crop-handle" data-dir="e"></div>
+            <div class="crop-handle" data-dir="sw"></div>
+            <div class="crop-handle" data-dir="s"></div>
+            <div class="crop-handle" data-dir="se"></div>
+          </div>
+        </div>
+        <div class="dialog-footer">
+          <span id="cropSizeLabel" class="crop-size-label"></span>
+          <button id="btnCancelCrop" class="btn">取消，不裁切</button>
+          <button id="btnApplyCrop" class="btn btn-primary">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M6 2v14a2 2 0 0 0 2 2h14"/>
+              <path d="M18 22V8a2 2 0 0 0-2-2H2"/>
+            </svg>
+            套用裁切
+          </button>
+        </div>
+      </div>
+    </div>
+
   </div>
   <script src="capture.js"></script>
 </body>

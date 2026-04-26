@@ -288,30 +288,263 @@ document.getElementById('btnConfirmFolder').addEventListener('click', async () =
   document.getElementById('inputNewFolder').value = '';
 });
 
-document.getElementById('btnRetake').addEventListener('click', async () => {
-  try {
-    const tabs = await chrome.tabs.query({ active: true, currentWindow: false });
-    const target = tabs.find(t => !t.url.startsWith('chrome-extension://'));
-    if (!target) return;
-    const dataUrl = await chrome.tabs.captureVisibleTab(target.windowId, { format: 'png' });
-    setScreenshot(dataUrl);
-  } catch (e) {
-    showToast('截圖失敗：' + e.message, 'error');
+// ── Preview Modal ─────────────────────────────────────────
+
+let previewScale = 1;
+let previewPan = { x: 0, y: 0 };
+let previewDragging = false;
+let previewDragStart = { mx: 0, my: 0, px: 0, py: 0 };
+
+function openPreviewModal() {
+  const src = document.getElementById('screenshotImg').src;
+  if (!screenshotBase64 || !src) { showToast('尚無截圖可預覽', 'error'); return; }
+  document.getElementById('previewImg').src = src;
+  previewScale = 1;
+  previewPan = { x: 0, y: 0 };
+  applyPreviewTransform();
+  document.getElementById('previewModal').classList.remove('hidden');
+}
+
+function closePreviewModal() {
+  document.getElementById('previewModal').classList.add('hidden');
+}
+
+function applyPreviewTransform() {
+  const img = document.getElementById('previewImg');
+  img.style.transform = `translate(${previewPan.x}px, ${previewPan.y}px) scale(${previewScale})`;
+  document.getElementById('zoomLevel').textContent = Math.round(previewScale * 100) + '%';
+  img.style.cursor = previewScale > 1 ? 'grab' : 'default';
+}
+
+function zoomPreview(delta) {
+  previewScale = Math.max(0.25, Math.min(6, previewScale + delta));
+  if (previewScale <= 1) previewPan = { x: 0, y: 0 };
+  applyPreviewTransform();
+}
+
+document.getElementById('screenshotPreviewBox').addEventListener('click', openPreviewModal);
+document.getElementById('btnPreview').addEventListener('click', openPreviewModal);
+document.getElementById('btnClosePreview').addEventListener('click', closePreviewModal);
+document.getElementById('previewModal').addEventListener('click', e => {
+  if (e.target === document.getElementById('previewModal')) closePreviewModal();
+});
+document.getElementById('btnZoomIn').addEventListener('click', () => zoomPreview(0.25));
+document.getElementById('btnZoomOut').addEventListener('click', () => zoomPreview(-0.25));
+document.getElementById('btnZoomReset').addEventListener('click', () => {
+  previewScale = 1; previewPan = { x: 0, y: 0 }; applyPreviewTransform();
+});
+
+const previewViewport = document.getElementById('previewViewport');
+previewViewport.addEventListener('wheel', e => {
+  e.preventDefault();
+  zoomPreview(e.deltaY < 0 ? 0.15 : -0.15);
+}, { passive: false });
+
+previewViewport.addEventListener('mousedown', e => {
+  if (previewScale <= 1) return;
+  previewDragging = true;
+  previewDragStart = { mx: e.clientX, my: e.clientY, px: previewPan.x, py: previewPan.y };
+  previewViewport.classList.add('grabbing');
+  e.preventDefault();
+});
+
+// ── Crop Modal ────────────────────────────────────────────
+
+const cropState = {
+  sel: { x: 0, y: 0, w: 0, h: 0 },
+  action: null,
+  start: { mx: 0, my: 0, sel: null },
+  imgRect: null,
+};
+
+function getCropImgRect() {
+  const img = document.getElementById('cropImg');
+  const vp  = document.getElementById('cropViewport');
+  const ir  = img.getBoundingClientRect();
+  const vr  = vp.getBoundingClientRect();
+  return { x: ir.left - vr.left, y: ir.top - vr.top, w: ir.width, h: ir.height };
+}
+
+function clampCropSel({ x, y, w, h }, ir) {
+  const minPx = 20;
+  w = Math.max(w, minPx);
+  h = Math.max(h, minPx);
+  x = Math.max(ir.x, Math.min(x, ir.x + ir.w - w));
+  y = Math.max(ir.y, Math.min(y, ir.y + ir.h - h));
+  w = Math.min(w, ir.x + ir.w - x);
+  h = Math.min(h, ir.y + ir.h - y);
+  return { x, y, w, h };
+}
+
+function updateCropUI() {
+  const { x, y, w, h } = cropState.sel;
+  const vp = document.getElementById('cropViewport');
+  const vw = vp.clientWidth;
+  const vh = vp.clientHeight;
+
+  document.getElementById('cropShadeTop').style.cssText    = `top:0;left:0;right:0;height:${y}px`;
+  document.getElementById('cropShadeBottom').style.cssText = `top:${y+h}px;left:0;right:0;bottom:0`;
+  document.getElementById('cropShadeLeft').style.cssText   = `top:${y}px;left:0;width:${x}px;height:${h}px`;
+  document.getElementById('cropShadeRight').style.cssText  = `top:${y}px;left:${x+w}px;right:0;height:${h}px`;
+
+  const sel = document.getElementById('cropSelection');
+  sel.style.cssText = `left:${x}px;top:${y}px;width:${w}px;height:${h}px`;
+  sel.classList.remove('hidden');
+
+  // Show selection size in actual image pixels
+  const ir = cropState.imgRect;
+  if (ir && ir.w > 0) {
+    const scaleX = document.getElementById('cropImg').naturalWidth  / ir.w;
+    const scaleY = document.getElementById('cropImg').naturalHeight / ir.h;
+    const pw = Math.round((x + w > ir.x + ir.w ? ir.x + ir.w - x : w) * scaleX);
+    const ph = Math.round((y + h > ir.y + ir.h ? ir.y + ir.h - y : h) * scaleY);
+    document.getElementById('cropSizeLabel').textContent = `選取範圍：${pw} × ${ph} px`;
+  }
+}
+
+function openCropModal() {
+  if (!screenshotBase64) { showToast('尚無截圖可裁切', 'error'); return; }
+  const modal = document.getElementById('cropModal');
+  const img   = document.getElementById('cropImg');
+  img.src = 'data:image/png;base64,' + screenshotBase64;
+  modal.classList.remove('hidden');
+  document.getElementById('cropSelection').classList.add('hidden');
+
+  const init = () => {
+    requestAnimationFrame(() => {
+      cropState.imgRect = getCropImgRect();
+      const ir = cropState.imgRect;
+      cropState.sel = { x: ir.x, y: ir.y, w: ir.w, h: ir.h };
+      updateCropUI();
+    });
+  };
+  if (img.complete && img.naturalWidth) init();
+  else img.onload = init;
+}
+
+function closeCropModal() {
+  document.getElementById('cropModal').classList.add('hidden');
+  cropState.action = null;
+}
+
+function applyCrop() {
+  const img = document.getElementById('cropImg');
+  const ir  = cropState.imgRect || getCropImgRect();
+  const { x, y, w, h } = cropState.sel;
+
+  const ix = Math.max(x - ir.x, 0);
+  const iy = Math.max(y - ir.y, 0);
+  const iw = Math.min(w, ir.w - ix);
+  const ih = Math.min(h, ir.h - iy);
+
+  const scaleX = img.naturalWidth  / ir.w;
+  const scaleY = img.naturalHeight / ir.h;
+
+  const canvas = document.createElement('canvas');
+  canvas.width  = Math.round(iw * scaleX);
+  canvas.height = Math.round(ih * scaleY);
+  canvas.getContext('2d').drawImage(
+    img,
+    Math.round(ix * scaleX), Math.round(iy * scaleY),
+    canvas.width, canvas.height,
+    0, 0, canvas.width, canvas.height
+  );
+
+  setScreenshot(canvas.toDataURL('image/png'));
+  closeCropModal();
+  showToast('截圖已裁切完成', 'success');
+}
+
+document.getElementById('btnCrop').addEventListener('click', openCropModal);
+document.getElementById('btnCancelCrop').addEventListener('click', closeCropModal);
+document.getElementById('btnApplyCrop').addEventListener('click', applyCrop);
+document.getElementById('cropModal').addEventListener('click', e => {
+  if (e.target === document.getElementById('cropModal')) closeCropModal();
+});
+
+// Crop interactions: handles + move + draw
+const cropSelEl   = document.getElementById('cropSelection');
+const cropVp      = document.getElementById('cropViewport');
+
+cropSelEl.addEventListener('mousedown', e => {
+  e.stopPropagation();
+  e.preventDefault();
+  const dir = e.target.dataset?.dir;
+  cropState.action = dir || 'move';
+  cropState.start  = { mx: e.clientX, my: e.clientY, sel: { ...cropState.sel } };
+});
+
+cropVp.addEventListener('mousedown', e => {
+  if (e.target === cropSelEl || e.target.closest('#cropSelection')) return;
+  e.preventDefault();
+  const vr = cropVp.getBoundingClientRect();
+  const mx = e.clientX - vr.left;
+  const my = e.clientY - vr.top;
+  cropState.action = 'draw';
+  cropState.sel    = { x: mx, y: my, w: 1, h: 1 };
+  cropState.start  = { mx: e.clientX, my: e.clientY, sel: { ...cropState.sel } };
+  updateCropUI();
+});
+
+// Shared mousemove / mouseup (global, covers both preview and crop)
+document.addEventListener('mousemove', e => {
+  // Preview pan
+  if (previewDragging) {
+    previewPan.x = previewDragStart.px + (e.clientX - previewDragStart.mx);
+    previewPan.y = previewDragStart.py + (e.clientY - previewDragStart.my);
+    applyPreviewTransform();
+  }
+
+  // Crop resize / move / draw
+  if (!cropState.action) return;
+  const vr  = cropVp.getBoundingClientRect();
+  const ir  = cropState.imgRect || getCropImgRect();
+  const dx  = e.clientX - cropState.start.mx;
+  const dy  = e.clientY - cropState.start.my;
+  const s   = cropState.start.sel;
+  let { x, y, w, h } = s;
+
+  switch (cropState.action) {
+    case 'draw': {
+      const mx = Math.min(Math.max(e.clientX - vr.left, ir.x), ir.x + ir.w);
+      const my = Math.min(Math.max(e.clientY - vr.top,  ir.y), ir.y + ir.h);
+      x = Math.min(mx, s.x); y = Math.min(my, s.y);
+      w = Math.abs(mx - s.x); h = Math.abs(my - s.y);
+      break;
+    }
+    case 'move': x = s.x + dx; y = s.y + dy; break;
+    case 'nw':   x = s.x+dx; y = s.y+dy; w = s.w-dx; h = s.h-dy; break;
+    case 'n':    y = s.y+dy; h = s.h-dy; break;
+    case 'ne':   y = s.y+dy; w = s.w+dx; h = s.h-dy; break;
+    case 'e':    w = s.w+dx; break;
+    case 'se':   w = s.w+dx; h = s.h+dy; break;
+    case 's':    h = s.h+dy; break;
+    case 'sw':   x = s.x+dx; w = s.w-dx; h = s.h+dy; break;
+    case 'w':    x = s.x+dx; w = s.w-dx; break;
+  }
+
+  if (w < 0) { x += w; w = -w; }
+  if (h < 0) { y += h; h = -h; }
+  cropState.sel = clampCropSel({ x, y, w, h }, ir);
+  updateCropUI();
+});
+
+document.addEventListener('mouseup', () => {
+  if (previewDragging) {
+    previewDragging = false;
+    previewViewport.classList.remove('grabbing');
+  }
+  if (cropState.action) {
+    cropState.action  = null;
+    cropState.imgRect = getCropImgRect();
   }
 });
 
-document.getElementById('btnCrop').addEventListener('click', async () => {
-  try {
-    const tabs = await chrome.tabs.query({ active: true, currentWindow: false });
-    const target = tabs.find(t => !t.url.startsWith('chrome-extension://'));
-    if (!target) return;
-    const response = await chrome.tabs.sendMessage(target.id, { action: 'startCrop' });
-    if (response && response.rect) {
-      showToast('裁切座標已取得（完整裁切功能需 Canvas 支援）', 'success');
-    }
-  } catch (e) {
-    showToast('裁切失敗：' + e.message, 'error');
-  }
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Escape') return;
+  closePreviewModal();
+  closeCropModal();
+  document.getElementById('conflictModal')?.classList.add('hidden');
 });
 
 function buildPayload() {
