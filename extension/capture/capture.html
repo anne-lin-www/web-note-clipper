@@ -14,59 +14,68 @@
     </header>
 
     <main class="form-body">
-      <div class="field">
-        <label for="inputUrl">來源網址</label>
-        <input type="url" id="inputUrl" placeholder="https://example.com">
-      </div>
-      <div class="field">
-        <label for="inputTitle">筆記標題</label>
-        <input type="text" id="inputTitle" placeholder="頁面標題">
-      </div>
-      <div class="field">
-        <label>截圖</label>
-        <div class="screenshot-preview">
-          <img id="screenshotImg" src="" alt="截圖預覽">
-          <div id="screenshotPlaceholder" class="placeholder">（無截圖）</div>
-        </div>
-        <div class="screenshot-actions">
-          <button id="btnRetake" class="btn btn-sm">重新截圖</button>
-          <button id="btnCrop" class="btn btn-sm">裁切</button>
-        </div>
-      </div>
-      <div class="field">
-        <label for="inputParagraph">重要段落</label>
-        <textarea id="inputParagraph" rows="4" placeholder="自動填入已選取的文字…"></textarea>
-      </div>
-      <div class="field">
-        <label for="inputNotes">個人筆記</label>
-        <textarea id="inputNotes" rows="3" placeholder="你的想法或備注…"></textarea>
-      </div>
-      <div class="field">
-        <label for="selectFolder">儲存到資料夾</label>
-        <div class="folder-row">
-          <select id="selectFolder"></select>
-          <button id="btnAddFolder" class="btn btn-sm">＋ 新增資料夾</button>
-        </div>
-        <div id="newFolderRow" class="new-folder-row hidden">
-          <input type="text" id="inputNewFolder" placeholder="法規/新子資料夾">
-          <button id="btnConfirmFolder" class="btn btn-sm btn-primary">確認</button>
-          <button id="btnCancelFolder" class="btn btn-sm">取消</button>
-        </div>
-      </div>
-      <div class="field">
-        <label>標籤</label>
-        <div id="tagsContainer" class="tags-container"></div>
-        <div class="tag-input-row">
-          <div class="tag-autocomplete">
-            <input type="text" id="inputTag" placeholder="輸入或選擇標籤" autocomplete="off">
-            <ul id="tagDropdown" class="tag-dropdown hidden"></ul>
+
+      <!-- 左欄：截圖 -->
+      <aside class="panel-left">
+        <div class="field">
+          <label>截圖預覽</label>
+          <div class="screenshot-preview">
+            <img id="screenshotImg" src="" alt="截圖預覽">
+            <div id="screenshotPlaceholder" class="placeholder">（尚無截圖）</div>
+          </div>
+          <div class="screenshot-actions">
+            <button id="btnRetake" class="btn btn-sm">重新截圖</button>
+            <button id="btnCrop" class="btn btn-sm">裁切</button>
           </div>
         </div>
-      </div>
-      <div class="field">
-        <label>日期</label>
-        <input type="text" id="inputDate" readonly>
-      </div>
+      </aside>
+
+      <!-- 右欄：表單欄位 -->
+      <section class="panel-right">
+        <div class="field">
+          <label for="inputUrl">來源網址</label>
+          <input type="url" id="inputUrl" placeholder="https://example.com">
+        </div>
+        <div class="field">
+          <label for="inputTitle">筆記標題</label>
+          <input type="text" id="inputTitle" placeholder="頁面標題">
+        </div>
+        <div class="field">
+          <label for="inputParagraph">重要段落</label>
+          <textarea id="inputParagraph" rows="5" placeholder="自動填入已選取的文字…"></textarea>
+        </div>
+        <div class="field">
+          <label for="inputNotes">個人筆記</label>
+          <textarea id="inputNotes" rows="4" placeholder="你的想法或備注…"></textarea>
+        </div>
+        <div class="field">
+          <label for="selectFolder">儲存到資料夾</label>
+          <div class="folder-row">
+            <select id="selectFolder"></select>
+            <button id="btnAddFolder" class="btn btn-sm">＋ 新增資料夾</button>
+          </div>
+          <div id="newFolderRow" class="new-folder-row hidden">
+            <input type="text" id="inputNewFolder" placeholder="法規/新子資料夾">
+            <button id="btnConfirmFolder" class="btn btn-sm btn-primary">確認</button>
+            <button id="btnCancelFolder" class="btn btn-sm">取消</button>
+          </div>
+        </div>
+        <div class="field">
+          <label>標籤</label>
+          <div id="tagsContainer" class="tags-container"></div>
+          <div class="tag-input-row">
+            <div class="tag-autocomplete">
+              <input type="text" id="inputTag" placeholder="輸入或選擇標籤" autocomplete="off">
+              <ul id="tagDropdown" class="tag-dropdown hidden"></ul>
+            </div>
+          </div>
+        </div>
+        <div class="field">
+          <label>儲存日期</label>
+          <input type="text" id="inputDate" readonly>
+        </div>
+      </section>
+
     </main>
 
     <footer class="app-footer">
