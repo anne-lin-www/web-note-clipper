@@ -30,7 +30,7 @@ def test_build_md_content_structure():
         tags=['法條', '重要'],
         key_paragraph='Some selected text',
         personal_note='My comment',
-        safe_title='Test Note',
+        screenshot_filename='2026-04-25_001.png',
         date_month='2026-04',
     )
     assert '---' in content
@@ -44,7 +44,8 @@ def test_build_md_content_structure():
     assert '## 個人筆記' in content
     assert 'My comment' in content
     assert '## 截圖' in content
-    assert '![[2026-04-25_Test Note.png]]' in content
+    assert '![[2026-04-25_001.png]]' in content
+    assert '截圖路徑: _assets/screenshots/2026-04/2026-04-25_001.png' in content
 
 
 def test_save_note_creates_md_file(tmp_path):

@@ -36,6 +36,19 @@ def _next_versioned_path(note_dir: str, base_name: str) -> str:
         v += 1
 
 
+def _next_screenshot_filename(screenshot_dir: str, date: str) -> str:
+    """Return the next available sequential screenshot filename: YYYY-MM-DD_001.png
+    Sequential numbering avoids title-length and illegal-character issues, and
+    ensures every save (including new-version notes) gets its own unique file.
+    """
+    n = 1
+    while True:
+        filename = f"{date}_{n:03d}.png"
+        if not os.path.exists(_safe_join(screenshot_dir, filename)):
+            return filename
+        n += 1
+
+
 def build_md_content(
     title: str,
     url: str,
@@ -44,11 +57,11 @@ def build_md_content(
     tags: list,
     key_paragraph: str,
     personal_note: str,
-    safe_title: str,
+    screenshot_filename: str,
     date_month: str,
 ) -> str:
     tags_yaml = ', '.join(tags) if tags else ''
-    screenshot_rel = f"_assets/screenshots/{date_month}/{date}_{safe_title}.png"
+    screenshot_rel = f"_assets/screenshots/{date_month}/{screenshot_filename}"
     lines = [
         '---',
         f'{_FM["title"]}: {title}',
@@ -65,7 +78,7 @@ def build_md_content(
         f'**擷取日期**：{date}',
         '',
         '## 截圖',
-        f'![[{date}_{safe_title}.png]]',
+        f'![[{screenshot_filename}]]',
         '',
         '## 重要段落',
         f'> {key_paragraph}',
@@ -96,6 +109,10 @@ def save_note(
     Returns:
       {'conflict': True, 'existing_filename': str}  — file exists, no resolution flag set
       {'file_path': str, 'screenshot_path': str}    — written successfully
+
+    Screenshot naming: YYYY-MM-DD_001.png sequential, independent of note title.
+    Each save always claims the next available number so new-version notes never
+    overwrite an existing screenshot.
     """
     safe_title = sanitize_filename(title)
     date_month = date[:7]  # YYYY-MM
@@ -114,6 +131,12 @@ def save_note(
     if new_version and os.path.exists(md_path):
         md_path = _next_versioned_path(note_dir, base_name)
 
+    # ── Resolve screenshot filename before building MD ────────
+    screenshot_dir = _safe_join(vault_path, '_assets', 'screenshots', date_month)
+    os.makedirs(screenshot_dir, exist_ok=True)
+    screenshot_filename = _next_screenshot_filename(screenshot_dir, date)
+    screenshot_path = _safe_join(screenshot_dir, screenshot_filename)
+
     # ── Write markdown ────────────────────────────────────────
     md_content = build_md_content(
         title=title,
@@ -123,17 +146,13 @@ def save_note(
         tags=tags,
         key_paragraph=key_paragraph,
         personal_note=personal_note,
-        safe_title=safe_title,
+        screenshot_filename=screenshot_filename,
         date_month=date_month,
     )
     with open(md_path, 'w', encoding='utf-8') as f:
         f.write(md_content)
 
     # ── Write screenshot ──────────────────────────────────────
-    screenshot_dir = _safe_join(vault_path, '_assets', 'screenshots', date_month)
-    os.makedirs(screenshot_dir, exist_ok=True)
-    screenshot_path = _safe_join(screenshot_dir, f"{date}_{safe_title}.png")
-
     if screenshot_base64:
         img_data = base64.b64decode(screenshot_base64)
         with open(screenshot_path, 'wb') as f:
