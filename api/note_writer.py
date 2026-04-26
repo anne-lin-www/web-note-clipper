@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import base64
 import os
 import re
@@ -7,6 +8,17 @@ from path_utils import _safe_join
 
 # Characters illegal on Windows filenames
 _ILLEGAL_CHARS = re.compile(r'[\\/:*?"<>|]')
+
+# Frontmatter key map — internal English key → Traditional Chinese display label.
+# Code logic always references the English key; only the output label is localised.
+_FM = {
+    'title':      '標題',
+    'url':        '來源網址',
+    'date':       '擷取日期',
+    'tags':       '標籤',
+    'folder':     '資料夾',
+    'screenshot': '截圖路徑',
+}
 
 
 def sanitize_filename(title: str) -> str:
@@ -29,26 +41,26 @@ def build_md_content(
     screenshot_rel = f"_assets/screenshots/{date_month}/{date}_{safe_title}.png"
     lines = [
         '---',
-        f'title: {title}',
-        f'url: {url}',
-        f'date: {date}',
-        f'tags: [{tags_yaml}]',
-        f'folder: {folder}',
-        f'screenshot: {screenshot_rel}',
+        f'{_FM["title"]}: {title}',
+        f'{_FM["url"]}: {url}',
+        f'{_FM["date"]}: {date}',
+        f'{_FM["tags"]}: [{tags_yaml}]',
+        f'{_FM["folder"]}: {folder}',
+        f'{_FM["screenshot"]}: {screenshot_rel}',
         '---',
         '',
         f'# {title}',
         '',
-        f'**Source**: [{title}]({url})',
-        f'**Captured**: {date}',
+        f'**來源**：[{title}]({url})',
+        f'**擷取日期**：{date}',
         '',
-        '## Screenshot',
+        '## 截圖',
         f'![[{date}_{safe_title}.png]]',
         '',
-        '## Key Paragraph',
+        '## 重要段落',
         f'> {key_paragraph}',
         '',
-        '## Personal Notes',
+        '## 個人筆記',
         personal_note,
         '',
     ]
