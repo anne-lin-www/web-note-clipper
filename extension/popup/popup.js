@@ -36,13 +36,25 @@ async function checkHealth() {
   }
 }
 
+function buildTextFragment(text) {
+  const t = text?.trim();
+  if (!t) return '';
+  // Only encode chars special to text-fragment syntax; leave CJK/Unicode raw so
+  // Obsidian doesn't double-encode the % signs when opening YAML property links.
+  const enc = s => s.replace(/[%,&#\r\n]/g, c => encodeURIComponent(c));
+  return '#:~:text=' + enc(t.slice(0, 20).trim());
+}
+
 document.getElementById('btnSave').addEventListener('click', async () => {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
 
   let selectedText = '';
+  let fragmentUrl = '';
   try {
     const response = await chrome.tabs.sendMessage(tab.id, { action: 'getSelectedText' });
     selectedText = response?.text || '';
+    // Fallback: compute locally if content script is an older version without fragmentUrl
+    fragmentUrl = response?.fragmentUrl || buildTextFragment(selectedText);
   } catch {
     // Content script unavailable or orphaned after extension reload — fallback to scripting API
     try {
@@ -51,10 +63,14 @@ document.getElementById('btnSave').addEventListener('click', async () => {
         func: () => window.getSelection()?.toString() ?? '',
       });
       selectedText = result || '';
+      fragmentUrl = buildTextFragment(selectedText);
     } catch {
       // Restricted page (chrome://, extension pages, etc.)
     }
   }
+
+  // Strip existing hash then append text fragment so the anchor URL is always clean
+  const anchorUrl = fragmentUrl ? tab.url.split('#')[0] + fragmentUrl : '';
 
   let screenshotDataUrl = '';
   try {
@@ -68,6 +84,7 @@ document.getElementById('btnSave').addEventListener('click', async () => {
       url: tab.url,
       title: tab.title,
       selectedText,
+      anchorUrl,
       screenshotDataUrl,
       timestamp: Date.now(),
     },

@@ -1,6 +1,7 @@
 const DEFAULT_API_BASE = 'http://localhost:8765';
 let currentTags = [];
 let screenshotBase64 = '';
+let anchorUrl = '';
 
 async function getApiBase() {
   try {
@@ -165,6 +166,7 @@ async function init() {
     document.getElementById('inputUrl').value = pendingNote.url || '';
     document.getElementById('inputTitle').value = pendingNote.title || '';
     document.getElementById('inputParagraph').value = pendingNote.selectedText || '';
+    anchorUrl = pendingNote.anchorUrl || '';
     if (pendingNote.screenshotDataUrl) {
       setScreenshot(pendingNote.screenshotDataUrl);
     }
@@ -547,16 +549,28 @@ document.addEventListener('keydown', e => {
   document.getElementById('conflictModal')?.classList.add('hidden');
 });
 
+function buildAnchorUrl(url, text) {
+  const t = text?.trim();
+  if (!url || !t) return '';
+  // Only encode chars special to text-fragment syntax; leave CJK/Unicode raw so
+  // Obsidian doesn't double-encode the % signs when opening YAML property links.
+  const enc = s => s.replace(/[%,&#\r\n]/g, c => encodeURIComponent(c));
+  return url.split('#')[0] + '#:~:text=' + enc(t.slice(0, 20).trim());
+}
+
 function buildPayload() {
+  const url = document.getElementById('inputUrl').value.trim();
+  const keyParagraph = document.getElementById('inputParagraph').value.trim();
   return {
     title:            document.getElementById('inputTitle').value.trim(),
-    url:              document.getElementById('inputUrl').value.trim(),
+    url,
     date:             document.getElementById('inputDate').value,
     folder:           document.getElementById('selectFolder').value,
     tags:             currentTags,
-    key_paragraph:    document.getElementById('inputParagraph').value.trim(),
+    key_paragraph:    keyParagraph,
     personal_note:    document.getElementById('inputNotes').value.trim(),
     screenshot_base64: screenshotBase64,
+    anchor_url:       anchorUrl || buildAnchorUrl(url, keyParagraph),
   };
 }
 

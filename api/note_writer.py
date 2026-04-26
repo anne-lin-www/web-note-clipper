@@ -14,6 +14,7 @@ _ILLEGAL_CHARS = re.compile(r'[\\/:*?"<>|]')
 _FM = {
     'title':      '標題',
     'url':        '來源網址',
+    'anchor_url': '錨點連結',
     'date':       '擷取日期',
     'tags':       '標籤',
     'folder':     '資料夾',
@@ -59,23 +60,29 @@ def build_md_content(
     personal_note: str,
     screenshot_filename: str,
     date_month: str,
+    anchor_url: str = '',
 ) -> str:
     tags_yaml = ', '.join(tags) if tags else ''
     screenshot_rel = f"_assets/screenshots/{date_month}/{screenshot_filename}"
-    lines = [
+
+    frontmatter = [
         '---',
         f'{_FM["title"]}: {title}',
         f'{_FM["url"]}: {url}',
+    ]
+    if anchor_url:
+        frontmatter.append(f'{_FM["anchor_url"]}: {anchor_url}')
+    frontmatter += [
         f'{_FM["date"]}: {date}',
         f'{_FM["tags"]}: [{tags_yaml}]',
         f'{_FM["folder"]}: {folder}',
         f'{_FM["screenshot"]}: {screenshot_rel}',
         '---',
+    ]
+
+    body = [
         '',
         f'# {title}',
-        '',
-        f'**來源**：[{title}]({url})',
-        f'**擷取日期**：{date}',
         '',
         '## 截圖',
         f'![[{screenshot_filename}]]',
@@ -87,7 +94,7 @@ def build_md_content(
         personal_note,
         '',
     ]
-    return '\n'.join(lines)
+    return '\n'.join(frontmatter + body)
 
 
 def save_note(
@@ -100,6 +107,7 @@ def save_note(
     key_paragraph: str,
     personal_note: str,
     screenshot_base64: str,
+    anchor_url: str = '',
     overwrite: bool = False,
     new_version: bool = False,
 ) -> dict:
@@ -148,6 +156,7 @@ def save_note(
         personal_note=personal_note,
         screenshot_filename=screenshot_filename,
         date_month=date_month,
+        anchor_url=anchor_url,
     )
     with open(md_path, 'w', encoding='utf-8') as f:
         f.write(md_content)

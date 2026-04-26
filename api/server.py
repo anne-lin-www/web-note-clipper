@@ -45,6 +45,7 @@ class SaveNoteRequest(BaseModel):
     key_paragraph: str = ""
     personal_note: str = ""
     screenshot_base64: str = ""
+    anchor_url: str = ""
     overwrite: bool = False
     new_version: bool = False
 
@@ -89,6 +90,7 @@ def api_save_note(req: SaveNoteRequest):
             key_paragraph=req.key_paragraph,
             personal_note=req.personal_note,
             screenshot_base64=req.screenshot_base64,
+            anchor_url=req.anchor_url,
             overwrite=req.overwrite,
             new_version=req.new_version,
         )

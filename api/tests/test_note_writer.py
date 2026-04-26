@@ -46,6 +46,10 @@ def test_build_md_content_structure():
     assert '## 截圖' in content
     assert '![[2026-04-25_001.png]]' in content
     assert '截圖路徑: _assets/screenshots/2026-04/2026-04-25_001.png' in content
+    # Duplicate metadata should NOT appear in body
+    assert '**來源**' not in content
+    assert '**擷取日期**' not in content
+    assert '**段落錨點**' not in content
 
 
 def test_save_note_creates_md_file(tmp_path):

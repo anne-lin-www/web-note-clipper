@@ -5,10 +5,20 @@ document.addEventListener('selectionchange', () => {
   if (sel) savedSelection = sel;
 });
 
+function buildTextFragment(text) {
+  const t = text?.trim();
+  if (!t) return '';
+  // Only encode chars special to text-fragment syntax; leave CJK/Unicode raw so
+  // Obsidian doesn't double-encode the % signs when opening YAML property links.
+  const enc = s => s.replace(/[%,&#\r\n]/g, c => encodeURIComponent(c));
+  return '#:~:text=' + enc(t.slice(0, 20).trim());
+}
+
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === 'getSelectedText') {
     const current = window.getSelection()?.toString() ?? '';
-    sendResponse({ text: current || savedSelection });
+    const text = current || savedSelection;
+    sendResponse({ text, fragmentUrl: buildTextFragment(text) });
     savedSelection = '';
     return true;
   }
