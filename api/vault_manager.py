@@ -5,11 +5,10 @@ from path_utils import _safe_join
 
 
 def list_folders(vault_path: str) -> list:
-    """Return all sub-folder paths relative to vault_path, excluding hidden folders."""
+    """Return all sub-folder paths relative to vault_path, excluding hidden and internal (_) folders."""
     result = []
     for root, dirs, _ in os.walk(vault_path):
-        # Skip hidden directories
-        dirs[:] = [d for d in dirs if not d.startswith('.')]
+        dirs[:] = [d for d in dirs if not d.startswith('.') and not d.startswith('_')]
         for d in dirs:
             full = os.path.join(root, d)
             rel = os.path.relpath(full, vault_path).replace('\\', '/')

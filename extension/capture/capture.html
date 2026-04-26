@@ -57,8 +57,10 @@
         <label>標籤</label>
         <div id="tagsContainer" class="tags-container"></div>
         <div class="tag-input-row">
-          <input type="text" id="inputTag" placeholder="輸入標籤後按 Enter" list="tagSuggestions">
-          <datalist id="tagSuggestions"></datalist>
+          <div class="tag-autocomplete">
+            <input type="text" id="inputTag" placeholder="輸入或選擇標籤" autocomplete="off">
+            <ul id="tagDropdown" class="tag-dropdown hidden"></ul>
+          </div>
         </div>
       </div>
       <div class="field">

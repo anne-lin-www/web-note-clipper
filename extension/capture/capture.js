@@ -81,46 +81,77 @@ async function checkHealth() {
 async function loadFolders() {
   const select = document.getElementById('selectFolder');
   const apiBase = await getApiBase();
-  try {
-    const resp = await fetch(`${apiBase}/folders`);
-    const { folders } = await resp.json();
-    select.innerHTML = '';
+
+  const buildOptions = (folders) => {
+    const fragment = document.createDocumentFragment();
+    const defaultOpt = document.createElement('option');
+    defaultOpt.value = '_inbox';
+    defaultOpt.textContent = '未分類（預設）';
+    fragment.appendChild(defaultOpt);
     folders.forEach(f => {
       const opt = document.createElement('option');
       opt.value = f;
       opt.textContent = f.replace(/\//g, ' / ');
-      select.appendChild(opt);
+      fragment.appendChild(opt);
     });
-    if (folders.length === 0) {
-      const opt = document.createElement('option');
-      opt.value = '_inbox';
-      opt.textContent = '_inbox';
-      select.appendChild(opt);
+    return fragment;
+  };
+
+  try {
+    const resp = await fetch(`${apiBase}/folders`);
+    const { folders } = await resp.json();
+    const prev = select.value;
+    select.replaceChildren(buildOptions(folders));
+    if (prev && [...select.options].some(o => o.value === prev)) {
+      select.value = prev;
     }
   } catch {
-    const opt = document.createElement('option');
-    opt.value = '_inbox';
-    opt.textContent = '_inbox';
-    select.innerHTML = '';
-    select.appendChild(opt);
+    select.replaceChildren(buildOptions([]));
   }
 }
 
+let allTags = [];
+
 async function loadTags() {
-  const datalist = document.getElementById('tagSuggestions');
   const apiBase = await getApiBase();
   try {
     const resp = await fetch(`${apiBase}/tags`);
     const { tags } = await resp.json();
-    datalist.innerHTML = '';
-    tags.forEach(t => {
-      const opt = document.createElement('option');
-      opt.value = t;
-      datalist.appendChild(opt);
-    });
+    allTags = tags;
   } catch {
     // ignore
   }
+}
+
+function renderTagDropdown(query) {
+  const dropdown = document.getElementById('tagDropdown');
+  const q = query.trim().toLowerCase();
+  const matches = q ? allTags.filter(t => t.toLowerCase().includes(q) && !currentTags.includes(t))
+                     : allTags.filter(t => !currentTags.includes(t));
+  dropdown.innerHTML = '';
+
+  if (q) {
+    const createLi = document.createElement('li');
+    createLi.className = 'tag-create';
+    createLi.textContent = `建立新標籤：${query.trim()}`;
+    createLi.dataset.value = query.trim();
+    dropdown.appendChild(createLi);
+  }
+
+  matches.slice(0, 20).forEach(t => {
+    const li = document.createElement('li');
+    li.textContent = t;
+    li.dataset.value = t;
+    dropdown.appendChild(li);
+  });
+
+  const hasItems = dropdown.children.length > 0;
+  dropdown.classList.toggle('hidden', !hasItems);
+  return hasItems;
+}
+
+function closeTagDropdown() {
+  document.getElementById('tagDropdown').classList.add('hidden');
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────────
@@ -147,12 +178,60 @@ async function init() {
 document.getElementById('btnClose').addEventListener('click', () => window.close());
 document.getElementById('btnCancel').addEventListener('click', () => window.close());
 
-document.getElementById('inputTag').addEventListener('keydown', e => {
-  if (e.key === 'Enter') {
+const inputTag = document.getElementById('inputTag');
+const tagDropdown = document.getElementById('tagDropdown');
+
+inputTag.addEventListener('input', () => {
+  renderTagDropdown(inputTag.value);
+});
+
+inputTag.addEventListener('focus', () => {
+  renderTagDropdown(inputTag.value);
+});
+
+inputTag.addEventListener('keydown', e => {
+  const items = [...tagDropdown.querySelectorAll('li')];
+  const activeIdx = items.findIndex(li => li.classList.contains('active'));
+
+  if (e.key === 'ArrowDown') {
     e.preventDefault();
-    const val = e.target.value.trim();
-    if (val) { addTagChip(val); e.target.value = ''; }
+    items[activeIdx]?.classList.remove('active');
+    const next = items[(activeIdx + 1) % items.length];
+    next?.classList.add('active');
+    next?.scrollIntoView({ block: 'nearest' });
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    items[activeIdx]?.classList.remove('active');
+    const prev = items[(activeIdx - 1 + items.length) % items.length];
+    prev?.classList.add('active');
+    prev?.scrollIntoView({ block: 'nearest' });
+  } else if (e.key === 'Enter') {
+    e.preventDefault();
+    const active = tagDropdown.querySelector('li.active');
+    if (active) {
+      addTagChip(active.dataset.value);
+      inputTag.value = '';
+      closeTagDropdown();
+    } else {
+      const val = inputTag.value.trim();
+      if (val) { addTagChip(val); inputTag.value = ''; closeTagDropdown(); }
+    }
+  } else if (e.key === 'Escape') {
+    closeTagDropdown();
   }
+});
+
+tagDropdown.addEventListener('mousedown', e => {
+  const li = e.target.closest('li');
+  if (!li) return;
+  e.preventDefault();
+  addTagChip(li.dataset.value);
+  inputTag.value = '';
+  closeTagDropdown();
+});
+
+document.addEventListener('click', e => {
+  if (!e.target.closest('.tag-autocomplete')) closeTagDropdown();
 });
 
 document.getElementById('btnAddFolder').addEventListener('click', () => {
@@ -241,8 +320,20 @@ document.getElementById('btnSave').addEventListener('click', async () => {
     });
     const data = await resp.json();
     if (data.success) {
-      showToast('✓ 已儲存！', 'success');
-      setTimeout(() => window.close(), 3000);
+      let countdown = 3;
+      const toast = document.getElementById('toast');
+      toast.textContent = `✓ 已儲存！${countdown} 秒後關閉…`;
+      toast.className = 'toast toast-success';
+      toast.classList.remove('hidden');
+      const timer = setInterval(() => {
+        countdown--;
+        if (countdown > 0) {
+          toast.textContent = `✓ 已儲存！${countdown} 秒後關閉…`;
+        } else {
+          clearInterval(timer);
+          window.close();
+        }
+      }, 1000);
     } else {
       showToast('儲存失敗：' + (data.detail || '未知錯誤'), 'error');
     }

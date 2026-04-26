@@ -26,6 +26,12 @@ textarea { resize: vertical; }
 .tag-chip button { background: none; border: none; cursor: pointer; color: #888; font-size: 14px; line-height: 1; padding: 0; }
 .tag-chip button:hover { color: #e74c3c; }
 .tag-input-row { margin-top: 6px; }
+.tag-autocomplete { position: relative; }
+.tag-autocomplete input { width: 100%; }
+.tag-dropdown { position: absolute; top: calc(100% + 2px); left: 0; right: 0; background: #fff; border: 1px solid #d0d0d0; border-radius: 4px; box-shadow: 0 4px 12px rgba(0,0,0,.12); list-style: none; max-height: 180px; overflow-y: auto; z-index: 1000; }
+.tag-dropdown li { padding: 7px 12px; cursor: pointer; font-size: 13px; }
+.tag-dropdown li:hover, .tag-dropdown li.active { background: #e8f4fd; }
+.tag-dropdown li.tag-create { color: #3498db; font-style: italic; }
 .app-footer { padding: 12px 20px; background: #f8f9fa; border-top: 1px solid #e9ecef; display: flex; align-items: center; }
 .api-status { flex: 1; display: flex; align-items: center; gap: 6px; font-size: 12px; color: #666; }
 .footer-actions { display: flex; gap: 8px; }
