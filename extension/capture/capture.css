@@ -232,6 +232,9 @@ textarea { resize: vertical; }
 
 /* ── Buttons ─────────────────────────────────────────────── */
 .btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   padding: 10px 20px;
   border: 1.5px solid #bbb;
   border-radius: 6px;
@@ -243,6 +246,7 @@ textarea { resize: vertical; }
   font-weight: 600;
   color: #333;
 }
+.btn svg { flex-shrink: 0; }
 .btn:hover { background: #ebebeb; }
 
 .btn-sm {
@@ -300,6 +304,9 @@ textarea { resize: vertical; }
 }
 
 .modal-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   font-size: 18px;
   font-weight: 700;
   color: #c0392b;

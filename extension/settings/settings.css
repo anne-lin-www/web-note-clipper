@@ -13,7 +13,8 @@ input:focus, select:focus { outline: none; border-color: #3498db; }
 .test-fail { background: #f8d7da; color: #721c24; }
 .hidden { display: none; }
 .app-footer { padding: 14px 20px; background: #f8f9fa; border-top: 1px solid #e9ecef; }
-.btn { padding: 8px 20px; border: 1px solid #d0d0d0; border-radius: 4px; background: #fff; cursor: pointer; font-size: 13px; font-family: inherit; }
+.btn { padding: 8px 20px; border: 1px solid #d0d0d0; border-radius: 4px; background: #fff; cursor: pointer; font-size: 13px; font-family: inherit; display: inline-flex; align-items: center; gap: 6px; }
+.btn svg { flex-shrink: 0; }
 .btn:hover { background: #f0f0f0; }
 .btn-primary { background: #3498db; color: #fff; border-color: #2980b9; }
 .btn-primary:hover { background: #2980b9; }
