@@ -19,7 +19,8 @@ async function loadVaults(apiUrl) {
       if (v.name === data.active_vault) opt.selected = true;
       select.appendChild(opt);
     });
-  } catch {
+  } catch (e) {
+    console.error('[WebNoteClipper] Failed to load vaults:', e);
     select.innerHTML = '<option value="">（無法取得 Vault 列表）</option>';
   }
 }
@@ -34,7 +35,8 @@ document.getElementById('btnTest').addEventListener('click', async () => {
     result.className = 'test-result test-ok';
     result.classList.remove('hidden');
     await loadVaults(apiUrl);
-  } catch {
+  } catch (e) {
+    console.error('[WebNoteClipper] Connection test failed:', e);
     result.textContent = '✗ 連線失敗 — 請確認服務是否已啟動';
     result.className = 'test-result test-fail';
     result.classList.remove('hidden');
@@ -53,7 +55,7 @@ document.getElementById('btnSave').addEventListener('click', async () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: vaultName }),
       });
-    } catch { /* ignore */ }
+    } catch (e) { console.error('[WebNoteClipper] Vault switch failed:', e); }
   }
   window.close();
 });

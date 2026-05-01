@@ -15,7 +15,7 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
   try {
     screenshotDataUrl = await chrome.tabs.captureVisibleTab(tab.windowId, { format: 'png' });
   } catch (e) {
-    console.warn('Screenshot capture failed:', e);
+    console.error('[WebNoteClipper] Screenshot capture failed:', e);
   }
 
   await chrome.storage.local.set({

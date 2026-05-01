@@ -27,7 +27,8 @@ async function checkHealth() {
     vaultInfo.classList.remove('hidden');
     warningBox.classList.add('hidden');
     btnSave.disabled = false;
-  } catch {
+  } catch (e) {
+    console.error('[WebNoteClipper] Health check failed:', e);
     statusDot.className = 'dot dot-error';
     statusText.textContent = '未連線';
     warningBox.classList.remove('hidden');
@@ -55,7 +56,8 @@ document.getElementById('btnSave').addEventListener('click', async () => {
     selectedText = response?.text || '';
     // Fallback: compute locally if content script is an older version without fragmentUrl
     fragmentUrl = response?.fragmentUrl || buildTextFragment(selectedText);
-  } catch {
+  } catch (e) {
+    console.error('[WebNoteClipper] Content script unavailable, falling back to scripting API:', e);
     // Content script unavailable or orphaned after extension reload — fallback to scripting API
     try {
       const [{ result }] = await chrome.scripting.executeScript({
@@ -76,7 +78,7 @@ document.getElementById('btnSave').addEventListener('click', async () => {
   try {
     screenshotDataUrl = await chrome.tabs.captureVisibleTab(tab.windowId, { format: 'png' });
   } catch (e) {
-    console.warn('Screenshot capture failed:', e);
+    console.error('[WebNoteClipper] Screenshot capture failed:', e);
   }
 
   await chrome.storage.local.set({

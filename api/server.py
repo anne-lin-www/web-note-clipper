@@ -5,24 +5,14 @@ from typing import List, Optional
 import os
 
 from config_loader import get_active_vault, switch_active_vault
+from logger import get_logger
 from note_writer import save_note
 from vault_manager import list_folders, extract_tags, initialize_vault_structure, create_folder
 
 app = FastAPI(title="Web Note Clipper API")
 
-# Load config once at module level (can be overridden in tests)
 _config = {}
 _middleware_added = False
-
-# Add CORS middleware once at import time with permissive defaults
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["http://localhost", "http://127.0.0.1"],
-    allow_origin_regex=r'chrome-extension://.*',
-    allow_credentials=False,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
 
 def get_config():
@@ -30,8 +20,19 @@ def get_config():
 
 
 def init_app(config: dict):
-    global _config
+    global _config, _middleware_added
     _config = config
+    if not _middleware_added:
+        origins = config.get('allowed_origins', ['http://localhost', 'http://127.0.0.1'])
+        app.add_middleware(
+            CORSMiddleware,
+            allow_origins=origins,
+            allow_origin_regex=r'chrome-extension://.*',
+            allow_credentials=False,
+            allow_methods=["*"],
+            allow_headers=["*"],
+        )
+        _middleware_added = True
 
 
 # --- Request / Response models ---
@@ -95,6 +96,7 @@ def api_save_note(req: SaveNoteRequest):
             new_version=req.new_version,
         )
     except Exception as e:
+        get_logger().error("save_note failed for '%s': %s", req.title, e, exc_info=True)
         raise HTTPException(status_code=500, detail=f"儲存失敗：{str(e)}")
 
     if result.get('conflict'):
@@ -158,6 +160,7 @@ def api_create_folder(req: CreateFolderRequest):
     try:
         full_path = create_folder(vault_path, req.path)
     except Exception as e:
+        get_logger().error("create_folder failed for '%s': %s", req.path, e, exc_info=True)
         raise HTTPException(status_code=500, detail=f"建立資料夾失敗：{str(e)}")
     return {"success": True, "path": req.path, "full_path": full_path}
 
@@ -208,5 +211,6 @@ def api_initialize_vault(req: InitVaultRequest):
     try:
         initialize_vault_structure(vault_path)
     except Exception as e:
+        get_logger().error("initialize_vault failed for '%s': %s", vault_path, e, exc_info=True)
         raise HTTPException(status_code=500, detail=f"初始化失敗：{str(e)}")
     return {"success": True, "vault_path": vault_path}

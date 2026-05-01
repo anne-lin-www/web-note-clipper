@@ -4,7 +4,9 @@
     "vaults": "List of Obsidian vaults. Each entry needs a 'name' and 'path'.",
     "active_vault": "The name of the vault to save notes to by default.",
     "api_port": "The local port the API listens on. Default: 8765.",
-    "allowed_origins": "CORS allowed origins. Keep 'chrome-extension://' for the Chrome extension."
+    "allowed_origins": "CORS allowed origins for browser access. chrome-extension:// is always allowed automatically.",
+    "log_level": "Log verbosity: warning (default), info, debug. Use 'info' or 'debug' to troubleshoot issues.",
+    "log_file": "Path to log file. Leave empty to write web-note-clipper.log next to the exe."
   },
   "vaults": [
     {
@@ -14,5 +16,7 @@
   ],
   "active_vault": "主要筆記",
   "api_port": 8765,
-  "allowed_origins": ["chrome-extension://"]
+  "allowed_origins": ["http://localhost", "http://127.0.0.1"],
+  "log_level": "warning",
+  "log_file": ""
 }

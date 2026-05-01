@@ -44,7 +44,9 @@ def _write_default_config(path: str) -> None:
         ],
         "active_vault": "主要筆記",
         "api_port": 8765,
-        "allowed_origins": ["chrome-extension://"]
+        "allowed_origins": ["http://localhost", "http://127.0.0.1"],
+        "log_level": "warning",
+        "log_file": ""
     }
     with open(path, 'w', encoding='utf-8') as f:
         json.dump(default, f, ensure_ascii=False, indent=2)

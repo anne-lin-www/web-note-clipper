@@ -73,7 +73,8 @@ async function checkHealth() {
     const data = await resp.json();
     dot.className = 'dot dot-ok';
     status.textContent = `已連線到 ${data.active_vault}`;
-  } catch {
+  } catch (e) {
+    console.error('[WebNoteClipper] Health check failed:', e);
     dot.className = 'dot dot-error';
     status.textContent = '未連線 — 請啟動本機服務';
   }
@@ -106,7 +107,8 @@ async function loadFolders() {
     if (prev && [...select.options].some(o => o.value === prev)) {
       select.value = prev;
     }
-  } catch {
+  } catch (e) {
+    console.error('[WebNoteClipper] Failed to load folders:', e);
     select.replaceChildren(buildOptions([]));
   }
 }
@@ -119,8 +121,8 @@ async function loadTags() {
     const resp = await fetch(`${apiBase}/tags`);
     const { tags } = await resp.json();
     allTags = tags;
-  } catch {
-    // ignore
+  } catch (e) {
+    console.error('[WebNoteClipper] Failed to load tags:', e);
   }
 }
 
@@ -283,7 +285,8 @@ document.getElementById('btnConfirmFolder').addEventListener('click', async () =
     }
     sel.value = path;
     showToast(`✓ 資料夾已建立：${path}`, 'success');
-  } catch {
+  } catch (e) {
+    console.error('[WebNoteClipper] Create folder error:', e);
     showToast(created ? '載入資料夾列表失敗' : '建立資料夾失敗', 'error');
   }
   document.getElementById('newFolderRow').classList.add('hidden');
@@ -611,6 +614,7 @@ async function performSave(payload) {
       showToast('儲存失敗：' + (data.detail || '未知錯誤'), 'error');
     }
   } catch (e) {
+    console.error('[WebNoteClipper] Save note failed:', e);
     showToast('網路錯誤：' + e.message, 'error');
   }
 }

@@ -30,6 +30,7 @@ jobs:
           pyinstaller --onefile --windowed --name web-note-clipper `
             --paths api `
             --add-data "api/config.example.json;." `
+            --add-data "api/icon16.png;." `
             api/main.py
 
       - name: Verify executable exists
