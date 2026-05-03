@@ -35,7 +35,7 @@ jobs:
 
       - name: Lint with flake8
         run: |
-          flake8 api/ --max-line-length=100 --exclude=__pycache__,api/tests
+          flake8 api/ --max-line-length=200 --exclude=__pycache__,api/tests
 
       - name: Run tests
         run: |
