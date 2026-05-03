@@ -158,6 +158,31 @@ function closeTagDropdown() {
   document.getElementById('tagDropdown')?.classList.add('hidden');
 }
 
+// ── Anchor-support hint ───────────────────────────────────────────────────────
+
+// 已知透過 JavaScript 動態載入內文的副檔名與網域，瀏覽器的 Text Fragment
+// (#:~:text=) 在這類頁面上無法正常反白，因為內文在 fragment 觸發時尚未存在於 DOM。
+// 新增已知不支援的網域時，只需在 KNOWN_NO_FRAGMENT_DOMAINS 加入 hostname 即可。
+const DYNAMIC_PAGE_EXTENSIONS = ['.aspx', '.jsp'];
+const KNOWN_NO_FRAGMENT_DOMAINS = ['law-out.mof.gov.tw'];
+
+function mightLackTextFragmentSupport(url) {
+  if (!url) return false;
+  try {
+    const { hostname, pathname } = new URL(url);
+    const lower = pathname.toLowerCase();
+    return (
+      KNOWN_NO_FRAGMENT_DOMAINS.some(d => hostname === d || hostname.endsWith('.' + d)) ||
+      DYNAMIC_PAGE_EXTENSIONS.some(ext => lower.endsWith(ext))
+    );
+  } catch { return false; }
+}
+
+function updateAnchorHint(url) {
+  document.getElementById('anchorHint')
+    ?.classList.toggle('hidden', !mightLackTextFragmentSupport(url));
+}
+
 // ── Init ──────────────────────────────────────────────────────────────────────
 
 async function init() {
@@ -166,6 +191,7 @@ async function init() {
   const { pendingNote } = await chrome.storage.local.get('pendingNote');
   if (pendingNote) {
     document.getElementById('inputUrl').value = pendingNote.url || '';
+    updateAnchorHint(pendingNote.url || '');
     document.getElementById('inputTitle').value = pendingNote.title || '';
     document.getElementById('inputParagraph').value = pendingNote.selectedText || '';
     anchorUrl = pendingNote.anchorUrl || '';
@@ -187,6 +213,7 @@ init();
 
 document.getElementById('btnClose').addEventListener('click', () => window.close());
 document.getElementById('btnCancel').addEventListener('click', () => window.close());
+document.getElementById('inputUrl').addEventListener('input', e => updateAnchorHint(e.target.value));
 
 const inputTag = document.getElementById('inputTag');
 const tagDropdown = document.getElementById('tagDropdown');
@@ -248,17 +275,156 @@ document.addEventListener('click', e => {
   if (!e.target.closest('.tag-autocomplete')) closeTagDropdown();
 });
 
+// ── Folder Builder ────────────────────────────────────────
+//
+// 【層數上限調整方式】
+// 只需修改 MAX_FOLDER_LEVELS 這一個常數，其餘邏輯會自動適應：
+//   - refreshAddLevelBtn()  → 決定何時隱藏「新增子層」按鈕列
+//   - appendFolderLevelRow() → guard 條件防止超過上限
+// 例如：將 5 改為 8，即可支援最多 8 層資料夾。
+
+const MAX_FOLDER_LEVELS = 5;
+
+function escHtml(s) {
+  return s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+}
+
+function getFolderLevelInputs() {
+  return [...document.querySelectorAll('#folderLevels .folder-level-row input')];
+}
+
+function updateFolderPreview() {
+  const names = getFolderLevelInputs().map(i => i.value.trim()).filter(Boolean);
+  const el = document.getElementById('folderPreviewText');
+  if (!names.length) { el.textContent = '—'; return; }
+  el.innerHTML = names
+    .map((n, i) => (i > 0 ? '<span class="preview-sep">›</span>' : '') + escHtml(n))
+    .join('');
+}
+
+function refreshAddLevelBtn() {
+  const inputs = getFolderLevelInputs();
+  const count = inputs.length;
+  const lastFilled = inputs.at(-1)?.value.trim().length > 0;
+  const addRow = document.getElementById('folderAddLevelRow');
+  const btn = document.getElementById('btnAddLevel');
+  if (count >= MAX_FOLDER_LEVELS) {
+    addRow.classList.add('hidden'); // 達上限時整列隱藏，不留空白佔位
+  } else {
+    addRow.classList.remove('hidden');
+    btn.disabled = !lastFilled;
+  }
+}
+
+function renumberLevelLabels() {
+  document.querySelectorAll('#folderLevels .folder-level-row').forEach((row, i) => {
+    row.querySelector('.level-label').textContent = `第 ${i + 1} 層`;
+    row.querySelector('input').placeholder = i === 0 ? '頂層資料夾名稱' : '子資料夾名稱';
+  });
+}
+
+// prefillValue: 預填文字（從現有下拉選取繼承的層級名稱）
+// autoFocus: 是否自動 focus 此列；預填列傳 false，只有最後新空白列傳 true
+function appendFolderLevelRow(prefillValue = '', autoFocus = true) {
+  const container = document.getElementById('folderLevels');
+  const n = container.querySelectorAll('.folder-level-row').length + 1;
+  if (n > MAX_FOLDER_LEVELS) return; // 防禦性 guard，避免 Enter 鍵等快捷路徑繞過按鈕停用狀態
+
+  const row = document.createElement('div');
+  row.className = 'folder-level-row';
+
+  const label = document.createElement('span');
+  label.className = 'level-label';
+  label.textContent = `第 ${n} 層`;
+
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.placeholder = n === 1 ? '頂層資料夾名稱' : '子資料夾名稱';
+  input.maxLength = 60;
+
+  if (prefillValue) {
+    input.value = prefillValue;
+    input.classList.add('level-inherited'); // 淺藍底色提示使用者此層來自現有路徑
+  }
+
+  input.addEventListener('input', () => {
+    input.classList.remove('level-inherited'); // 使用者開始編輯即移除繼承樣式
+    updateFolderPreview();
+    refreshAddLevelBtn();
+  });
+  input.addEventListener('keydown', e => {
+    if (e.key !== 'Enter') return;
+    e.preventDefault();
+    const addBtn = document.getElementById('btnAddLevel');
+    if (addBtn && !addBtn.disabled && !addBtn.closest('.hidden')) {
+      addBtn.click();
+    } else {
+      document.getElementById('btnConfirmFolder').focus();
+    }
+  });
+
+  row.appendChild(label);
+  row.appendChild(input);
+
+  if (n > 1) {
+    const rm = document.createElement('button');
+    rm.className = 'btn btn-sm btn-remove-level';
+    rm.title = '移除此層';
+    rm.textContent = '× 移除';
+    rm.addEventListener('click', () => {
+      row.remove();
+      renumberLevelLabels();
+      updateFolderPreview();
+      refreshAddLevelBtn();
+    });
+    row.appendChild(rm);
+  }
+
+  container.appendChild(row);
+  if (autoFocus) input.focus();
+  refreshAddLevelBtn();
+}
+
 document.getElementById('btnAddFolder').addEventListener('click', () => {
-  document.getElementById('newFolderRow').classList.remove('hidden');
-  document.getElementById('inputNewFolder').focus();
+  const panel = document.getElementById('folderBuilderPanel');
+  if (!panel.classList.contains('hidden')) return;
+  panel.classList.remove('hidden');
+  document.getElementById('folderLevels').innerHTML = '';
+
+  // 繼承下拉選單的當前選取作為父層脈絡，讓使用者只需輸入新的子層名稱
+  const selected = document.getElementById('selectFolder').value;
+  const hasParent = selected && selected !== '_inbox';
+  if (hasParent) {
+    selected.split('/').forEach(part => appendFolderLevelRow(part, false));
+  }
+
+  appendFolderLevelRow('', true); // 新子層輸入列，自動 focus
+  updateFolderPreview();
 });
+
 document.getElementById('btnCancelFolder').addEventListener('click', () => {
-  document.getElementById('newFolderRow').classList.add('hidden');
-  document.getElementById('inputNewFolder').value = '';
+  document.getElementById('folderBuilderPanel').classList.add('hidden');
 });
+
+document.getElementById('btnAddLevel').addEventListener('click', () => {
+  appendFolderLevelRow();
+});
+
 document.getElementById('btnConfirmFolder').addEventListener('click', async () => {
-  const path = document.getElementById('inputNewFolder').value.trim();
-  if (!path) return;
+  const names = getFolderLevelInputs().map(i => i.value.trim());
+
+  const emptyIdx = names.findIndex(n => !n);
+  if (emptyIdx !== -1) {
+    getFolderLevelInputs()[emptyIdx].focus();
+    showToast('請填寫所有層級的資料夾名稱', 'error');
+    return;
+  }
+  if (names.some(n => /[/\\:*?"<>|]/.test(n))) {
+    showToast('資料夾名稱不能包含特殊符號（/ \\ : * ? " < > |）', 'error');
+    return;
+  }
+
+  const path = names.join('/');
   const apiBase = await getApiBase();
   let created = false;
   try {
@@ -270,8 +436,6 @@ document.getElementById('btnConfirmFolder').addEventListener('click', async () =
     if (!resp.ok) {
       const err = await resp.json().catch(() => ({}));
       showToast('建立資料夾失敗：' + (err.detail || resp.status), 'error');
-      document.getElementById('newFolderRow').classList.add('hidden');
-      document.getElementById('inputNewFolder').value = '';
       return;
     }
     created = true;
@@ -284,13 +448,12 @@ document.getElementById('btnConfirmFolder').addEventListener('click', async () =
       sel.appendChild(opt);
     }
     sel.value = path;
-    showToast(`✓ 資料夾已建立：${path}`, 'success');
+    document.getElementById('folderBuilderPanel').classList.add('hidden');
+    showToast(`✓ 已建立：${path.replace(/\//g, ' › ')}`, 'success');
   } catch (e) {
     console.error('[WebNoteClipper] Create folder error:', e);
     showToast(created ? '載入資料夾列表失敗' : '建立資料夾失敗', 'error');
   }
-  document.getElementById('newFolderRow').classList.add('hidden');
-  document.getElementById('inputNewFolder').value = '';
 });
 
 // ── Preview Modal ─────────────────────────────────────────
